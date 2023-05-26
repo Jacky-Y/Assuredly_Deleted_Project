@@ -1,0 +1,5 @@
+{
+    "user_id":"1",
+    "delete_method":"3",
+    "delete_granularity":"phone_number,address"
+}
