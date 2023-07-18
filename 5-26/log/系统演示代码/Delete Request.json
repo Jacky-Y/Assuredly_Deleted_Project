@@ -1,0 +1,12 @@
+{
+    "Time": "April 23, 2023 15:30:00",
+    "Log Type": "Delete Request",
+    "user_id": "12345",
+    "Delete Target": "User Data",
+    "delete_granularity": "single record",
+    "Sync confirmation": "Yes",
+    "delete_method": "Secure Erase",
+    "Multiple replication locations": "Yes",
+    "Delete configuration": "Soft deletion, with a retention period of 30 days, verified by third-party auditors for deletion",
+    "Message": "null"
+  }

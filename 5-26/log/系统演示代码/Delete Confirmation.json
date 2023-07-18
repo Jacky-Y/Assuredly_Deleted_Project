@@ -1,0 +1,13 @@
+{
+    "Time": "April 23, 2023 15:30:05",
+    "Log Type": "Delete Confirmation",
+    "user_id": "12345",
+    "Delete Target": "User Data",
+    "delete_granularity": "individual records",
+    "Sync confirmation": "Yes",
+    "delete_method": "Secure Erase",
+    "Multiple replication locations": "Yes",
+    "Delete configuration": "Soft deletion, retention period of 30 days, deletion verified by third-party auditors",
+    "Message": "The delete operation completed successfully. The data has been safely erased."
+  }
+  

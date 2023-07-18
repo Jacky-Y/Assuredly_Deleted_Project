@@ -1,0 +1,13 @@
+{
+    "Time": "April 23, 2023 15:30:10",
+    "Log Type": "Delete Operation",
+    "user_id": "12345",
+    "Delete Target": "Customer Data",
+    "delete_granularity": "individual records",
+    "Sync confirmation": "Yes",
+    "delete_method": "Secure Erase",
+    "Multiple replication locations": "Yes",
+    "Delete configuration": "Soft deletion, retention period of 30 days, deletion verified by third-party auditors",
+    "Message": "Individual records with user ID 12345 have been deleted from customer data. Adopting soft deletion method, the retention period is 30 days. The deletion operation has been verified by a third-party auditor."
+  }
+  
