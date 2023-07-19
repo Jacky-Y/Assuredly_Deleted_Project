@@ -1,4 +1,9 @@
 import struct
+import json
+import socket
+import requests
+import os
+from datetime import datetime
 
 
 def create_packet_header(version, main_command, sub_command, encrypt_mode, auth_mode, message_id, packet_length):
@@ -24,8 +29,7 @@ def create_packet_header(version, main_command, sub_command, encrypt_mode, auth_
 
     return packet_header
 
-import struct
-import json
+
 
 def create_packet_header_with_json(version, main_command, sub_command, encrypt_mode, auth_mode, message_id, json_str):
     reserved = "0x0000"  #保留字段
@@ -56,7 +60,7 @@ def create_packet_header_with_json(version, main_command, sub_command, encrypt_m
 
     return packet_header
 
-import socket
+
 
 def send_packet_tcp(host, port, packet):
     """
@@ -80,3 +84,41 @@ def send_packet_tcp(host, port, packet):
 
 
 # print(create_packet_header("0x01","0x40","0x0001","0x00","0x00","0x00000000","0x00000011"))
+
+
+
+
+
+
+def save_dict_as_json_and_post(my_dict, filename, url):
+    # 获取当前的日期和时间并添加到文件名
+    current_time = datetime.now().strftime("%Y%m%d%H%M%S")
+    filename_with_time = f"{filename}_{current_time}.json"
+    
+    # 将字典转换为json并保存为文件
+    try:
+        with open(filename_with_time, 'w') as f:
+            json.dump(my_dict, f)
+    except Exception as e:
+        print(f"Error saving JSON file: {e}")
+        return False
+
+    # 获取文件的完整路径
+    full_path = os.path.realpath(filename_with_time)
+
+    # 发送POST请求
+    try:
+        with open(full_path, 'rb') as f:
+            response = requests.post(url, files={"file": f})
+
+        # 如果请求返回的状态码不是200，我们认为请求失败
+        if response.status_code != 200:
+            print(f"POST request failed with status code: {response.status_code}")
+            return False
+
+    except Exception as e:
+        print(f"Error sending POST request: {e}")
+        return False
+
+    # 如果以上都没有问题，返回True
+    return True

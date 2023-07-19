@@ -23,6 +23,24 @@ def analyse():
         msg="received"
         #以上为删除指令解析过程
 
+
+
+
+        ########################解析完成  生成删除确认日志################################
+        delete_confirmation_log= { 
+                                "deletePerformer": "王XX",
+                                "Log_Type": "Delete_Confirmation",
+                                "infoID": "u10000000000000",
+                                "delete_granularity":"gender",
+                                "deleteIntention": "删除个人信息标识",
+                                "deleteRequirements": "can not be recovered"
+                                        }
+        print(delete_confirmation_log)
+        result=util.save_dict_as_json_and_post(delete_confirmation_log,"Delete_Comfirmation","http://172.18.0.207:5000/receive_files")
+        print("确认日志状态：",result)
+
+
+
               
         # 连接到数据库
         cnx = mysql.connector.connect(
@@ -67,10 +85,7 @@ def analyse():
 
 
     
-    #     #以上为指令分解与下发过程
-
-
-
+    #     #以下为指令分解与下发过程
 
         # 数据库连接信息
         db_info = [
@@ -143,9 +158,9 @@ def analyse():
         deleteIntention="删除个人信息标识"
         deleteRequirements="can not be recovered"
         deleteControlSet=sqls
-        deleteAlg=1
-        deleteAlgParam="XX,YY"
-        deleteLevel=5
+        deleteAlg="Secure Erase"
+        deleteAlgParam="random bits"
+        deleteLevel=3
 
 
 
@@ -177,7 +192,7 @@ def analyse():
         }
     }
         json_data = json.dumps(data, indent=4)
-        # print(json_data)
+        print(json_data)
         json_data_bytes = json_data.encode('utf-8')
 
         ##############header部分##############
@@ -190,10 +205,17 @@ def analyse():
 
         packet=header+json_data_bytes+tail
 
-
+        ##############存证发送#############    
         # print(packet)
-        # util.send_packet_tcp("192.168.43.243",50001,packet)
+        # util.send_packet_tcp("192.168.43.243",50004,packet)
 
+        #########################删除操作日志#############################
+        delete_operation_log=data["data"]["content"]
+        delete_operation_log["Log_Type"]="Delete_Operation"
+        print(delete_operation_log)
+        result=util.save_dict_as_json_and_post(delete_operation_log,"Delete_Operation","http://172.18.0.207:5000/receive_files")
+        print("操作日志状态：",result)
+        
 
 
         # 关闭游标和数据库连接
