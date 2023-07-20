@@ -21,17 +21,28 @@ def analyse():
         delete_granularity=json_data.get("delete_granularity")
         print("infoID=%s,\ndelete_method=%s,\ndelete_granularity=%s"%(infoID,delete_method,delete_granularity))
         msg="received"
+
+        receive_time=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         #以上为删除指令解析过程
 
+
+
+        ########################设置固定信息########################
+        deletePerformer="王XX"
+        deleteIntention="删除个人信息标识"
+        deleteRequirements="can not be recovered"
+        deleteAlg="Secure Erase"
+        deleteAlgParam="random bits"
+        deleteLevel=3
 
 
 
         ########################解析完成  生成删除确认日志################################
         delete_confirmation_log= { 
-                                "deletePerformer": "王XX",
+                                "deletePerformer": deletePerformer,
                                 "Log_Type": "Delete_Confirmation",
-                                "infoID": "u10000000000000",
-                                "delete_granularity":"gender",
+                                "infoID": infoID,
+                                "delete_granularity":delete_granularity,
                                 "deleteIntention": "删除个人信息标识",
                                 "deleteRequirements": "can not be recovered"
                                         }
@@ -153,14 +164,14 @@ def analyse():
         infoCreateLoc=result[0][-1]
 
         deleteDupInfoID=deleteDupInfos
-        deletePerformer="王XX"
+        # deletePerformer="王XX"
         deletePerformTime=datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        deleteIntention="删除个人信息标识"
-        deleteRequirements="can not be recovered"
+        # deleteIntention="删除个人信息标识"
+        # deleteRequirements="can not be recovered"
         deleteControlSet=sqls
-        deleteAlg="Secure Erase"
-        deleteAlgParam="random bits"
-        deleteLevel=3
+        # deleteAlg="Secure Erase"
+        # deleteAlgParam="random bits"
+        # deleteLevel=3
 
 
 

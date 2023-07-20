@@ -90,7 +90,7 @@ def send_packet_tcp(host, port, packet):
 
 
 
-def save_dict_as_json_and_post(my_dict, filename, url):
+def save_dict_as_json_and_post(my_dict, filename, url, should_post=False):
     # 获取当前的日期和时间并添加到文件名
     current_time = datetime.now().strftime("%Y%m%d%H%M%S")
     filename_with_time = f"{filename}_{current_time}.json"
@@ -105,6 +105,10 @@ def save_dict_as_json_and_post(my_dict, filename, url):
 
     # 获取文件的完整路径
     full_path = os.path.realpath(filename_with_time)
+
+    # 如果should_post为False，则只保存文件不发送
+    if not should_post:
+        return True
 
     # 发送POST请求
     try:
@@ -122,3 +126,4 @@ def save_dict_as_json_and_post(my_dict, filename, url):
 
     # 如果以上都没有问题，返回True
     return True
+
