@@ -1,4 +1,4 @@
-from preserveEvidence import *
+from storeEvidence import *
 
 import json
 
@@ -36,7 +36,34 @@ deleteGranularity = "age"
 
 # 定义其他字段
 dataHash = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
-noncesign = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
+datasign = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
+
+
+# 定义初始请求中特有的变量并赋值
+reqtime = "2020-08-01 08:00:00"
+objectSize = 256
+objectMode = "text"
+
+
+# 然后构造 JSON 字符串
+requestData = {
+    "systemID": systemID,
+    "systemIP": systemIP,
+    "mainCMD": 0x0001,
+    "subCMD": 0x0041,
+    "evidenceID": evidenceID,
+    "msgVersion": 0x4000,
+    "reqtime": reqtime,
+    "data": {
+        "objectSize": objectSize,
+        "objectMode": objectMode
+    },
+    "datasign": datasign
+}
+# print(requestData)
+
+
+
 
 # 创建JSON对象
 supervisionEvidence = {
@@ -55,7 +82,7 @@ supervisionEvidence = {
         "others": others
     },
     "dataHash": dataHash,
-    "noncesign": noncesign
+    "datasign": datasign
 }
 
 # 序列化为JSON字符串
@@ -97,7 +124,7 @@ fullEvidence = {
         "deleteLevel": deleteLevel
     },
     "dataHash": dataHash,
-    "noncesign": noncesign
+    "datasign": datasign
 }
 
 # 序列化为JSON字符串
@@ -106,8 +133,27 @@ fullEvidence_str = json.dumps(fullEvidence, indent=4)
 # # 打印或存储JSON字符串
 # print(fullEvidence_str)
 
-packet=create_packet("0x01","0x40","0x0001","0x00","0x00","0x00000000",fullEvidence)
-print(packet)
+client_interaction('124.127.245.34', 50010, '124.127.245.34', 50004, 
+                   requestData, '0x0001', '0x4000', 
+                   fullEvidence, '0x0003', '0x4000')
 
-# send_packet_tcp("192.168.0.1", 80, packet)
+print("end")
+
+packet=create_packet('0x0001', '0x0001', '0x0041', '0x4000', '0x00', '0x00',fullEvidence)
+# print(packet)
+# print(packet[18:-16])
+# print(extract_from_packet(packet))
+
+
+# json_data_str = json.dumps(fullEvidence, indent=4)
+# # 将JSON字符串转换为字节流
+# json_data_str_bytes = json_data_str.encode('utf-8')
+
+# # 创建包头
+# header = create_packet_header_with_json('0x0001', '0x0001', '0x0041', '0x4000', '0x00', '0x00', json_data_str)
+
+# print(header)
+
+# send_packet_tcp("124.127.245.34", 50010, packet)
+# print("end")
 

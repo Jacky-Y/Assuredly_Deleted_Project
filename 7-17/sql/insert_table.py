@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import create_engine
-import openyxl
+
 
 # 创建MySQL数据库连接
 engine = create_engine('mysql+mysqlconnector://server3_root:123456@127.0.0.1:3306/server3_db')
