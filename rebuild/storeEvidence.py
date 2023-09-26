@@ -103,6 +103,7 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
 
             # 从服务器1接收响应并获取随机标识
             data1 = s1.recv(4096)
+            print(data1)
             data1_json=extract_from_packet(data1)
             random_id = data1_json["randomidentification"]
             print("connect 1 done")
@@ -125,6 +126,7 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
 
             # 从服务器2接收最终响应
             data2 = s2.recv(4096)
+            print(data2)
             data2_json=extract_from_packet(data2)
             print(data2_json)
             print("connect 2 done")
