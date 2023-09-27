@@ -1,0 +1,42 @@
+[
+    {
+        "InfoType": "Name",
+        "InfoLevel": 5
+    },
+    {
+        "InfoType": "Gender",
+        "InfoLevel": 3
+    },
+    {
+        "InfoType": "Age",
+        "InfoLevel": 4
+    },
+    {
+        "InfoType": "Address",
+        "InfoLevel": 5
+    },
+    {
+        "InfoType": "Phone",
+        "InfoLevel": 3
+    },
+    {
+        "InfoType": "Email",
+        "InfoLevel": 4
+    },
+    {
+        "InfoType": "Occupation",
+        "InfoLevel": 2
+    },
+    {
+        "InfoType": "Nationality",
+        "InfoLevel": 3
+    },
+    {
+        "InfoType": "Education",
+        "InfoLevel": 4
+    },
+    {
+        "InfoType": "Hobbies",
+        "InfoLevel": 1
+    }
+]
