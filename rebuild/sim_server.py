@@ -19,7 +19,7 @@ def query_info():
 
     info_item = next((item for item in info_ids_data if item["InfoID"] == info_id), None)
     if not info_item:
-        return jsonify({"error": "InfoID not found"}), 404
+        return jsonify({"error": "InfoID not found"}), 404   
 
     info_types = info_item['InfoTypes']
 
@@ -32,4 +32,4 @@ def query_info():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=6000)
