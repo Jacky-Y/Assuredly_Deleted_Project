@@ -3,6 +3,9 @@ curl -X POST -H "Content-Type: application/json" -d "{\"InfoID\": \"0c1d2e3f4g5h
 
 curl -X POST -H "Content-Type: application/json" -d @data.json http://localhost:5000/getInstruction
 
+curl -X POST http://localhost:5000/getStatus -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+
+
 import requests
 
 url = "http://127.0.0.1:6000/query"
