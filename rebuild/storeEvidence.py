@@ -93,9 +93,9 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
             print("connect 1 start")
             s1.connect((remote_ip_1, remote_port_1))
 
-            initial_content['mainCMD'] = initial_main_cmd
+            initial_content['mainCMD'] = int(initial_main_cmd, 16)
             initial_content['subCMD'] = 0x0041
-            initial_content['msgVersion'] = initial_msg_version
+            initial_content['msgVersion'] = int(initial_msg_version, 16)
 
             # 发送初始请求
             initial_data = create_packet('0x0001', initial_main_cmd, '0x0041', initial_msg_version, '0x00', '0x00', initial_content)
@@ -103,7 +103,6 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
 
             # 从服务器1接收响应并获取随机标识
             data1 = s1.recv(4096)
-            print(data1)
             data1_json=extract_from_packet(data1)
             random_id = data1_json["randomidentification"]
             print("connect 1 done")
@@ -113,9 +112,9 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
             print("connect 2 start")
             s2.connect((remote_ip_2, remote_port_2))
 
-            second_content['mainCMD'] = second_main_cmd
+            second_content['mainCMD'] = int(second_main_cmd, 16)
             second_content['subCMD'] = 0x0041
-            second_content['msgVersion'] = second_msg_version
+            second_content['msgVersion'] = int(second_msg_version, 16)
 
             # 添加接收到的随机标识到 second_content
             second_content["randomidentification"] = random_id
@@ -126,7 +125,6 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
 
             # 从服务器2接收最终响应
             data2 = s2.recv(4096)
-            print(data2)
             data2_json=extract_from_packet(data2)
             print(data2_json)
             print("connect 2 done")
@@ -134,7 +132,7 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
     except socket.error as e:
         print(f"Socket error: {e}")
     except json.JSONDecodeError:
-        print("Failed to decode JSON response from server.")
+        print("Failed to decode JSON response from server.")     
     except KeyError as e:
         print(f"Expected key not found in server response: {e}")
     except Exception as e:

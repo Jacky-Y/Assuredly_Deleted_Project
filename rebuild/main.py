@@ -52,7 +52,7 @@ requestData = {
     "mainCMD": 0x0001,
     "subCMD": 0x0041,
     "evidenceID": evidenceID,
-    "msgVersion": 0x4000,
+    "msgVersion": 0x4100,
     "reqtime": reqtime,
     "data": {
         "objectSize": objectSize,
@@ -134,12 +134,12 @@ fullEvidence_str = json.dumps(fullEvidence, indent=4)
 # print(fullEvidence_str)
 
 client_interaction('124.127.245.34', 50010, '124.127.245.34', 50004, 
-                   requestData, '0x0001', '0x4000', 
-                   fullEvidence, '0x0003', '0x4000')
+                   requestData, '0x0001', '0x4100', 
+                   fullEvidence, '0x0003', '0x4100')
 
 print("end")
 
-packet=create_packet('0x0001', '0x0001', '0x0041', '0x4000', '0x00', '0x00',fullEvidence)
+packet=create_packet('0x0001', '0x0001', '0x0041', '0x4100', '0x00', '0x00',fullEvidence)
 # print(packet)
 # print(packet[18:-16])
 # print(extract_from_packet(packet))
@@ -150,7 +150,7 @@ packet=create_packet('0x0001', '0x0001', '0x0041', '0x4000', '0x00', '0x00',full
 # json_data_str_bytes = json_data_str.encode('utf-8')
 
 # # 创建包头
-# header = create_packet_header_with_json('0x0001', '0x0001', '0x0041', '0x4000', '0x00', '0x00', json_data_str)
+# header = create_packet_header_with_json('0x0001', '0x0001', '0x0041', '0x4100', '0x00', '0x00', json_data_str)
 
 # print(header)
 

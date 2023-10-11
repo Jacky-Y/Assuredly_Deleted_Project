@@ -5,6 +5,8 @@ curl -X POST -H "Content-Type: application/json" -d @data.json http://localhost:
 
 curl -X POST http://localhost:5000/getStatus -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
 
+curl -X POST http://localhost:5000/getDuplicationLocations -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+
 
 import requests
 
