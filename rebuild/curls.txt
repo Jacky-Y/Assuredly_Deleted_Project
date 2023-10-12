@@ -3,9 +3,15 @@ curl -X POST -H "Content-Type: application/json" -d "{\"InfoID\": \"0c1d2e3f4g5h
 
 curl -X POST -H "Content-Type: application/json" -d @data.json http://localhost:5000/getInstruction
 
-curl -X POST http://localhost:5000/getStatus -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+curl -X POST http://localhost:7000/getStatus -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
 
-curl -X POST http://localhost:5000/getDuplicationLocations -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+curl -X POST http://localhost:7000/getDuplicationLocations -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+
+curl -X POST http://localhost:7000/getKeyStorageMethod -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+
+curl -X POST http://localhost:7000/getCentralizedKey -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+
+curl -X POST http://localhost:7000/getDecentralizedKey -H "Content-Type: application/json" -d "{\"InfoID\": \"0c1d2e3f4g5h\"}"
 
 
 import requests
