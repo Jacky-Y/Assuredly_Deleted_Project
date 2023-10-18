@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from StorageSystemClient import StorageSystemClient
 import requests
+import json
 
 app = Flask(__name__)
 
@@ -9,40 +10,25 @@ def get_instruction():
     try:
         # 获取JSON数据
         data = request.json
-        
-        # 从JSON数据中解析所需的值
-        systemID = data.get("systemID")
-        systemIP = data.get("systemIP")
-        mainCMD = data.get("mainCMD")
-        subCMD = data.get("subCMD")
-        evidencelD = data.get("evidencelD")
-        msgVersion = data.get("msgVersion")
-        submittime = data.get("submittime")
-        
+
+    
         # 解析内部data字段的值
-        detailed_data = data.get("data")
-        userID = detailed_data.get("userID")
-        infoID = detailed_data.get("infoID")
-        deleteMethod = detailed_data.get("deleteMethod")
-        deleteGranularity = detailed_data.get("deleteGranularity")
+        affairsID = data.get("affairs_id")
+        userID = data.get("user_id")
+        infoID = data.get("info_id")
+        notifytime = data.get("notifytime")
+        deleteMethod = data.get("deleteMethod")
+        deleteGranularity = data.get("deleteGranularity")
         
-        dataHash = data.get("dataHash")
-        noncesign = data.get("noncesign")
         
         # 打印所有解析的值
-        print("System ID:", systemID)
-        print("System IP:", systemIP)
-        print("Main CMD:", mainCMD)
-        print("Sub CMD:", subCMD)
-        print("Evidence ID:", evidencelD)
-        print("Message Version:", msgVersion)
-        print("Submit Time:", submittime)
+
+        print("affairsID:", affairsID)
+        print("Submit Time:", notifytime)
         print("User ID:", userID)
         print("Info ID:", infoID)
         print("Delete Method:", deleteMethod)
         print("Delete Granularity:", deleteGranularity)
-        print("Data Hash:", dataHash)
-        print("Nonce Sign:", noncesign)
 
         print("--------------------------------删除指令解析完成-----------------------------------")
 
@@ -116,3 +102,4 @@ def get_instruction():
 
 if __name__ == "__main__":
     app.run()
+    # app.run(host='192.168.43.65')
