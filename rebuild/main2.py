@@ -5,6 +5,39 @@ import json
 
 app = Flask(__name__)
 
+
+def generate_delete_command(deleteMethod, max_level=None):
+    # 根据deleteMethod来判断
+    if deleteMethod == "logicallyDelete":
+        return "rm"
+    elif deleteMethod == "overwrittenDelete":
+        return "shred -n 3 -u"
+    elif not deleteMethod:  # 如果deleteMethod为空
+        if max_level is not None and max_level >= 5:
+            return "shred -n 5 -u"
+        else:
+            return "shred -n 3 -u"
+    else:
+        raise ValueError("Invalid deleteMethod provided")
+
+def generate_full_command(deleteCommand, locations, key_locations=None):
+    # 基础命令
+    commands = [f"{deleteCommand} {location}" for location in locations]
+
+    # 如果key_locations不为空，则添加密钥路径到命令
+    if key_locations:
+        key_commands = [f"{deleteCommand} {key_location}" for key_location in key_locations]
+        commands.extend(key_commands)
+    
+    # 使用&&连接命令,并返回最终命令
+    full_command = " && ".join(commands)
+    return full_command
+
+
+
+
+
+
 @app.route('/getInstruction', methods=['POST'])
 def get_instruction():
     try:
@@ -30,7 +63,7 @@ def get_instruction():
         print("Delete Method:", deleteMethod)
         print("Delete Granularity:", deleteGranularity)
 
-        print("--------------------------------删除指令解析完成-----------------------------------")
+        print("--------------------------------Delete Notification Parsed Done-----------------------------------")
 
         url = "http://127.0.0.1:6000/query"
         headers = {
@@ -51,9 +84,9 @@ def get_instruction():
         # Print the dictionary with the highest 'InfoLevel'
         print(sorted_data)
         max_level=sorted_data[0]['InfoLevel']
-        print("最高敏感等级---- >>",max_level)
+        print("the max sensitive level is ---- >>",max_level)
 
-        print("--------------------------------分类分级信息获取完成-----------------------------------")
+        print("--------------------------------Classification Information Get-----------------------------------")
 
         client = StorageSystemClient("http://127.0.0.1:7000")
         info_id_to_query = infoID  # 请替换为需要查询的实际InfoID值
@@ -92,6 +125,25 @@ def get_instruction():
                 print("Failed to retrieve key storage method.")
         else:
             print(f"InfoID {info_id_to_query} is not encrypted.")
+
+        print("--------------------------------Duplication and Key Information Get-----------------------------------")
+##     生成删除命令
+        print(deleteMethod)
+        deleteCommand=generate_delete_command(deleteMethod,max_level)
+        result=generate_full_command(deleteCommand,locations,key_locations)
+        print(result)
+
+
+
+        print("--------------------------------Delete Command Generated-----------------------------------")
+        
+
+
+        
+
+
+        
+
 
 
     
