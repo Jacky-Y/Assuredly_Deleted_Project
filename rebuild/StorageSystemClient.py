@@ -11,11 +11,9 @@ class StorageSystemClient:
     def _post_request(self, endpoint, info_id):
         url = f"{self.base_url}/{endpoint}"
         data = {"InfoID": info_id}
-        response = requests.post(url, headers=self.headers, json=data)
-        if response.status_code == 200:
-            return response.json()
-        else:
-            response.raise_for_status()
+        response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
+        response.raise_for_status()
+        return response.json()
 
     def get_status(self, info_id):
         json_data = self._post_request("getStatus", info_id)
@@ -36,3 +34,21 @@ class StorageSystemClient:
     def get_key_storage_method(self, info_id):
         json_data = self._post_request("getKeyStorageMethod", info_id)
         return json_data.get("KeyStorageMethod")
+
+    def send_dup_del_command(self, duplication_del_command):
+        url = f"{self.base_url}/duplicationDel"
+        data = {"duplicationDelCommand": duplication_del_command}
+        response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
+        try:
+            return response.json()
+        except ValueError:
+            response.raise_for_status()
+
+    def send_key_del_command(self, key_del_command):
+        url = f"{self.base_url}/keyDel"
+        data = {"keyDelCommand": key_del_command}
+        response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
+        try:
+            return response.json()
+        except ValueError:
+            response.raise_for_status()

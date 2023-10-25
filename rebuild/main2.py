@@ -20,21 +20,13 @@ def generate_delete_command(deleteMethod, max_level=None):
     else:
         raise ValueError("Invalid deleteMethod provided")
 
-def generate_full_command(deleteCommand, locations, key_locations=None):
+def generate_full_command(deleteCommand, locations):
     # 基础命令
     commands = [f"{deleteCommand} {location}" for location in locations]
-
-    # 如果key_locations不为空，则添加密钥路径到命令
-    if key_locations:
-        key_commands = [f"{deleteCommand} {key_location}" for key_location in key_locations]
-        commands.extend(key_commands)
     
     # 使用&&连接命令,并返回最终命令
     full_command = " && ".join(commands)
     return full_command
-
-
-
 
 
 
@@ -89,7 +81,7 @@ def get_instruction():
         print("--------------------------------Classification Information Get-----------------------------------")
 
         client = StorageSystemClient("http://127.0.0.1:7000")
-        info_id_to_query = infoID  # 请替换为需要查询的实际InfoID值
+        info_id_to_query = infoID  # 替换为需要查询的实际InfoID值
 
         # Step 1: 查询InfoID的存储状态
         status = client.get_status(info_id_to_query)
@@ -103,6 +95,8 @@ def get_instruction():
             print(f"No duplication locations found for InfoID {info_id_to_query}")
 
         # Step 3: 判断是否为加密状态
+        key_locations=[]
+
         if status == "Encrypted":
             # Step 4: 查询密钥存储方式
             key_storage_method = client.get_key_storage_method(info_id_to_query)
@@ -130,12 +124,35 @@ def get_instruction():
 ##     生成删除命令
         print(deleteMethod)
         deleteCommand=generate_delete_command(deleteMethod,max_level)
-        result=generate_full_command(deleteCommand,locations,key_locations)
-        print(result)
-
-
+        print(deleteCommand)
+        duplicationDelCommand=generate_full_command(deleteCommand,locations)
+        keyDelCommand=generate_full_command(deleteCommand,key_locations)
+        print("the duplication Delete Command is -->>",duplicationDelCommand)
+        print("the key Delete Command is -->>",keyDelCommand)
 
         print("--------------------------------Delete Command Generated-----------------------------------")
+##     删除命令下发
+        # 发送duplicationDelCommand
+        duplication_response = client.send_dup_del_command(duplicationDelCommand)
+        if duplication_response['status'] == 'error':
+            print("Error during duplication delete:", duplication_response['message'])
+        else:
+            print("Response from duplication delete:", duplication_response)
+
+
+        # 如果keyDelCommand不为空，则发送
+        if keyDelCommand:
+            key_del_response = client.sendKeyDelCommand(keyDelCommand)
+
+            if key_del_response['status'] == 'error':
+                print("Error during key delete:", key_del_response['message'])
+            else:
+                print("Response from key delete:", key_del_response)
+        else:
+            print("Not encrypted, no need to delete key")
+
+
+        print("--------------------------------Delete Command Deliveried-----------------------------------")
         
 
 

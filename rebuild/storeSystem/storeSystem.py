@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import json
+import subprocess
 
 app = Flask(__name__)
 
@@ -78,6 +79,46 @@ def get_key_storage_method():
 
     # If InfoID does not exist in the list
     return jsonify({"Error": "InfoID not found"}), 404
+
+
+@app.route('/duplicationDel', methods=['POST'])
+def duplication_del():
+    command = request.json.get('duplicationDelCommand')
+    print(command)
+    # 可能需要对命令进行一些验证
+
+    try:
+        result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, timeout=60)  # 设置超时
+        return jsonify({"status": "success", "result": result.decode('utf-8')})
+    except subprocess.CalledProcessError as e:
+        try:
+            message = e.output.decode('utf-8', errors='replace')
+        except AttributeError:
+            # 当e.output为空或不是预期的字节类型时
+            message = str(e)
+        return jsonify({"status": "error", "message": message}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/keyDel', methods=['POST'])
+def key_del():
+    command = request.json.get('keyDelCommand')
+    print(command)
+    # 可能需要对命令进行一些验证
+
+    try:
+        result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, timeout=60)  # 设置超时
+        return jsonify({"status": "success", "result": result.decode('utf-8')})
+    except subprocess.CalledProcessError as e:
+        try:
+            message = e.output.decode('utf-8', errors='replace')
+        except AttributeError:
+            # 当e.output为空或不是预期的字节类型时
+            message = str(e)
+        return jsonify({"status": "error", "message": message}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(port=7000)
