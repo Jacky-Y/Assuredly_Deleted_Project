@@ -6,27 +6,112 @@ import json
 app = Flask(__name__)
 
 
-def generate_delete_command(deleteMethod, max_level=None):
-    # 根据deleteMethod来判断
-    if deleteMethod == "logicallyDelete":
-        return "rm"
-    elif deleteMethod == "overwrittenDelete":
-        return "shred -n 3 -u"
-    elif not deleteMethod:  # 如果deleteMethod为空
-        if max_level is not None and max_level >= 5:
-            return "shred -n 5 -u"
-        else:
-            return "shred -n 3 -u"
-    else:
-        raise ValueError("Invalid deleteMethod provided")
+def fetch_and_process_data(infoID):
+    # 第一步：从 http://127.0.0.1:7000/getInfoType 获取 InfoType 列表
+    url_get_info_type = "http://127.0.0.1:7000/getInfoType"
+    headers_get_info_type = {
+        "Content-Type": "application/json"
+    }
+    data_get_info_type = {
+        "infoID": infoID
+    }
 
-def generate_full_command(deleteCommand, locations):
-    # 基础命令
-    commands = [f"{deleteCommand} {location}" for location in locations]
+    response_get_info_type = requests.post(url_get_info_type, headers=headers_get_info_type, json=data_get_info_type)
+    response_data_get_info_type = response_get_info_type.json()
+
+    # 检查返回数据中是否包含 error，如果包含则抛出异常
+    if 'error' in response_data_get_info_type:
+        raise ValueError(response_data_get_info_type['error'])
+
+    info_types = response_data_get_info_type.get('InfoTypes', [])
+
+    # 第二步：使用 InfoType 列表请求 http://127.0.0.1:6000/query 获取结果
+    url_query = "http://127.0.0.1:6000/query"
+    headers_query = {
+        "Content-Type": "application/json"
+    }
+    data_query = {
+        "InfoTypes": info_types
+    }
+
+    response_query = requests.post(url_query, headers=headers_query, json=data_query)
+    response_data = response_query.json()
+
+    # 检查返回的数据是否包含错误。如果包含，则抛出异常
+    if 'error' in response_data:
+        raise ValueError(response_data['error'])
+
+    # 对返回的数据基于 'InfoLevel' 进行排序
+    sorted_data = sorted(response_data, key=lambda x: x['InfoLevel'], reverse=True)
+
+    # 获取 InfoLevel 最高的数据
+    max_level = sorted_data[0]['InfoLevel']
+
+    return sorted_data, max_level
+
+
+def generate_delete_level(max_level):
+    if max_level == 5:
+        return 7
+    elif max_level in [3, 4]:
+        return 5
+    elif max_level in [1, 2]:
+        return 3
+    else:
+        return 1
+
+def generate_delete_command_str(command_json):
+    target = command_json.get("target", "")
+    deleteGranularity = command_json.get("deleteGranularity", None)
+    deleteAlg = command_json.get("deleteAlg", "")
+    deleteAlgParam = command_json.get("deleteAlgParam", "")
+    deleteLevel = command_json.get("deleteLevel", "")
     
-    # 使用&&连接命令,并返回最终命令
-    full_command = " && ".join(commands)
-    return full_command
+    if deleteGranularity:
+        command_str = f"delete {deleteGranularity} of {target} using deleteAlg={deleteAlg} with deleteAlgParam={deleteAlgParam} at deleteLevel= {deleteLevel}"
+    else:
+        command_str = f"delete {target} using deleteAlg={deleteAlg} with deleteAlgParam={deleteAlgParam} at deleteLevel= {deleteLevel}"
+    
+    return command_str
+
+
+@app.route('/getOperationLog', methods=['POST'])
+def get_operation_log():
+    # 验证请求的内容类型为application/json
+    if not request.is_json:
+        return jsonify(error="bad request"), 400
+    
+    # 此处可进行一些数据验证和处理，如保存日志等
+    # ...
+
+    # 返回指定的JSON数据
+    response_data = {
+        "systemID": 1,
+        "systemIP": "210.73.60.100",
+        "time": "2020-08-01 08:00:00",
+        "data": {
+            "userID": "u100000003",
+            "infoID":"283749abaa234cde",
+            "deletePerformer": "王XX",
+            "deletePerformTime": "2022-12-13 09:24:34",
+            "deleteDupinfoID": "48942ECA-7CDA-4B02-8198-274C4D232E47",
+            "deleteInstruction": {
+                "userID": "u100000003",
+                "infoID":"283749abaa234cde",
+                "deleteMethod": "Software deletion",
+                "deleteGranularity":"age"
+            },
+            "deleteMethod": "Software deletion",
+            "deleteGranularity":"age",
+            "deleteControlSet": "control-constraints cname……",
+            "deleteAlg": 1,
+            "deleteAlgParam": "XX,YY",
+            "deleteLevel": 2,
+            "instructionConfirmationTime": "2022-12-13 09:24:34"
+        },
+        "dataHash": "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
+    }
+    return jsonify(response_data)
 
 
 
@@ -57,42 +142,28 @@ def get_instruction():
 
         print("--------------------------------Delete Notification Parsed Done-----------------------------------")
 
-        url = "http://127.0.0.1:6000/query"
-        headers = {
-            "Content-Type": "application/json"
-        }
-        data = {
-            "InfoID": infoID
-        }
-
-        response = requests.post(url, headers=headers, json=data)
-
-        print(response.status_code)
-        response_data = response.json()
-
-        # Sort the list of dictionaries based on the 'InfoLevel' key
-        sorted_data = sorted(response_data, key=lambda x: x['InfoLevel'], reverse=True)
-
-        # Print the dictionary with the highest 'InfoLevel'
+        sorted_data, max_level = fetch_and_process_data(infoID)
         print(sorted_data)
-        max_level=sorted_data[0]['InfoLevel']
         print("the max sensitive level is ---- >>",max_level)
+
+
+        
 
         print("--------------------------------Classification Information Get-----------------------------------")
 
         client = StorageSystemClient("http://127.0.0.1:7000")
-        info_id_to_query = infoID  # 替换为需要查询的实际InfoID值
+        info_id_to_query = infoID  # 替换为需要查询的实际infoID值
 
-        # Step 1: 查询InfoID的存储状态
+        # Step 1: 查询infoID的存储状态
         status = client.get_status(info_id_to_query)
-        print(f"Storage status for InfoID {info_id_to_query}: {status}")
+        print(f"Storage status for infoID {info_id_to_query}: {status}")
 
-        # Step 2: 查询InfoID的副本位置信息
+        # Step 2: 查询infoID的副本位置信息
         locations = client.get_duplication_locations(info_id_to_query)
         if locations:
-            print(f"Locations for InfoID {info_id_to_query}: {locations}")
+            print(f"Locations for infoID {info_id_to_query}: {locations}")
         else:
-            print(f"No duplication locations found for InfoID {info_id_to_query}")
+            print(f"No duplication locations found for infoID {info_id_to_query}")
 
         # Step 3: 判断是否为加密状态
         key_locations=[]
@@ -112,23 +183,37 @@ def get_instruction():
                     key_locations = None
 
                 if key_locations:
-                    print(f"Key locations for InfoID {info_id_to_query}: {key_locations}")
+                    print(f"Key locations for infoID {info_id_to_query}: {key_locations}")
                 else:
                     print("Failed to retrieve key locations.")
             else:
                 print("Failed to retrieve key storage method.")
         else:
-            print(f"InfoID {info_id_to_query} is not encrypted.")
+            print(f"infoID {info_id_to_query} is not encrypted.")
 
         print("--------------------------------Duplication and Key Information Get-----------------------------------")
 ##     生成删除命令
-        print(deleteMethod)
-        deleteCommand=generate_delete_command(deleteMethod,max_level)
-        print(deleteCommand)
-        duplicationDelCommand=generate_full_command(deleteCommand,locations)
-        keyDelCommand=generate_full_command(deleteCommand,key_locations)
-        print("the duplication Delete Command is -->>",duplicationDelCommand)
-        print("the key Delete Command is -->>",keyDelCommand)
+
+        deleteLevel=generate_delete_level(max_level)
+
+        duplicationDelCommand={
+        "target": locations,
+        "deleteGranularity": "age",
+        "deleteAlg": deleteMethod,
+        "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
+        "deleteLevel": deleteLevel
+        }
+        keyDelCommand={
+        "target": locations,
+        "deleteAlg": deleteMethod,
+        "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
+        "deleteLevel": deleteLevel
+        }
+        duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
+        keyDelCommand_str=generate_delete_command_str(keyDelCommand)
+
+        print("the duplication Delete Command is -->>",duplicationDelCommand_str)
+        print("the key Delete Command is -->>",keyDelCommand_str)
 
         print("--------------------------------Delete Command Generated-----------------------------------")
 ##     删除命令下发
@@ -152,7 +237,7 @@ def get_instruction():
             print("Not encrypted, no need to delete key")
 
 
-        print("--------------------------------Delete Command Deliveried-----------------------------------")
+#         print("--------------------------------Delete Command Deliveried-----------------------------------")
         
 
 
@@ -171,4 +256,4 @@ def get_instruction():
 
 if __name__ == "__main__":
     app.run()
-    # app.run(host='192.168.43.65')
+    # app.run(host='10.12.170.110')

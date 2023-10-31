@@ -10,7 +10,7 @@ class StorageSystemClient:
 
     def _post_request(self, endpoint, info_id):
         url = f"{self.base_url}/{endpoint}"
-        data = {"InfoID": info_id}
+        data = {"infoID": info_id}
         response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
         response.raise_for_status()
         return response.json()
@@ -38,17 +38,22 @@ class StorageSystemClient:
     def send_dup_del_command(self, duplication_del_command):
         url = f"{self.base_url}/duplicationDel"
         data = {"duplicationDelCommand": duplication_del_command}
-        response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
         try:
+            response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
+            response.raise_for_status()  # Check if the HTTP response was successful
             return response.json()
-        except ValueError:
-            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending duplication delete command to {url}: {e}")
+            return {"status": "error", "message": str(e)}
 
     def send_key_del_command(self, key_del_command):
         url = f"{self.base_url}/keyDel"
         data = {"keyDelCommand": key_del_command}
-        response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
         try:
+            response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
+            response.raise_for_status()  # Check if the HTTP response was successful
             return response.json()
-        except ValueError:
-            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending key delete command to {url}: {e}")
+            return {"status": "error", "message": str(e)}
+

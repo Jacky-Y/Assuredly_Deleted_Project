@@ -21,7 +21,7 @@ infoID = "BA4A7F24-ACA7-4844-98A5-464786DF5C09"
 infoType = 1
 deletePerformer = "王XX"
 deletePerformTime = "2022-12-13 09:24:34"
-deleteDupInfoID = "48942ECA-7CDA-4B02-8198-274C4D232E47"
+deleteDupinfoID = "48942ECA-7CDA-4B02-8198-274C4D232E47"
 deleteControlSet = "control-constraints cname……"
 deleteAlg = 1
 deleteAlgParam = "XX,YY"
@@ -111,7 +111,7 @@ fullEvidence = {
         "infoType": infoType,
         "deletePerformer": deletePerformer,
         "deletePerformTime": deletePerformTime,
-        "deleteDupInfoID": deleteDupInfoID,
+        "deleteDupinfoID": deleteDupinfoID,
         "deleteInstruction": {
             "userID": userID,
             "infoID": infoID_deleteInstruction,

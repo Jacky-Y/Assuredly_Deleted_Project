@@ -1,18 +1,20 @@
-curl -X POST -H "Content-Type: application/json" -d "{\"InfoID\": \"0c1d2e3f4g5h\"}" http://127.0.0.1:6000/query
+curl -X POST -H "Content-Type: application/json" -d "{\"infoID\": \"0c1d2e3f4g5h\"}" http://127.0.0.1:6000/query
 
 
 curl -X POST -H "Content-Type: application/json" -d @data.json http://localhost:5000/getInstruction
 
-curl -X POST http://localhost:7000/getStatus -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+curl -X POST http://localhost:7000/getStatus -H "Content-Type: application/json" -d "{\"infoID\": \"9w0x1y2z3a4b\"}"
 
-curl -X POST http://localhost:7000/getDuplicationLocations -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+curl -X POST http://localhost:7000/getDuplicationLocations -H "Content-Type: application/json" -d "{\"infoID\": \"9w0x1y2z3a4b\"}"
 
-curl -X POST http://localhost:7000/getKeyStorageMethod -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+curl -X POST http://localhost:7000/getKeyStorageMethod -H "Content-Type: application/json" -d "{\"infoID\": \"9w0x1y2z3a4b\"}"
 
-curl -X POST http://localhost:7000/getCentralizedKey -H "Content-Type: application/json" -d "{\"InfoID\": \"9w0x1y2z3a4b\"}"
+curl -X POST http://localhost:7000/getCentralizedKey -H "Content-Type: application/json" -d "{\"infoID\": \"9w0x1y2z3a4b\"}"
 
-curl -X POST http://localhost:7000/getDecentralizedKey -H "Content-Type: application/json" -d "{\"InfoID\": \"0c1d2e3f4g5h\"}"
+curl -X POST http://localhost:7000/getDecentralizedKey -H "Content-Type: application/json" -d "{\"infoID\": \"0c1d2e3f4g5h\"}"
 
+
+delete target using deleteAlg=overwrittenDelete with deleteAlgParam=all 0 at deleteLevel= 3
 
 import requests
 
@@ -21,10 +23,20 @@ headers = {
     "Content-Type": "application/json"
 }
 data = {
-    "InfoID": "0c1d2e3f4g5h"
+    "infoID": "0c1d2e3f4g5h"
 }
 
 response = requests.post(url, headers=headers, json=data)
 
 print(response.status_code)
 print(response.json())
+
+
+{
+    "target": "delete target",
+    "deleteGranularity": "age",
+    "deleteAlg": "overwrittenDelete",
+    "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
+    "deleteLevel": "3"
+}
+

@@ -26,16 +26,16 @@ with open('info_classify.json', 'r') as file:
 print(loaded_data)
 
 data2 = [
-    {"InfoID": "1a2b3c4d5e6f", "InfoTypes": ["Name", "Gender", "Phone"]},
-    {"InfoID": "2g3h4i5j6k7l", "InfoTypes": ["Address", "Age"]},
-    {"InfoID": "3m4n5o6p7q8r", "InfoTypes": ["Email", "Phone", "Name", "Occupation"]},
-    {"InfoID": "4s5t6u7v8w9x", "InfoTypes": ["Nationality", "Hobbies"]},
-    {"InfoID": "5y6z7a8b9c0d", "InfoTypes": ["Name", "Age", "Address"]},
-    {"InfoID": "6e7f8g9h0i1j", "InfoTypes": ["Gender", "Education", "Occupation"]},
-    {"InfoID": "7k8l9m0n1o2p", "InfoTypes": ["Email", "Phone"]},
-    {"InfoID": "8q9r0s1t2u3v", "InfoTypes": ["Age", "Nationality", "Hobbies"]},
-    {"InfoID": "9w0x1y2z3a4b", "InfoTypes": ["Gender", "Address", "Phone", "Email"]},
-    {"InfoID": "0c1d2e3f4g5h", "InfoTypes": ["Name", "Education", "Hobbies"]}
+    {"infoID": "1a2b3c4d5e6f", "InfoTypes": ["Name", "Gender", "Phone"]},
+    {"infoID": "2g3h4i5j6k7l", "InfoTypes": ["Address", "Age"]},
+    {"infoID": "3m4n5o6p7q8r", "InfoTypes": ["Email", "Phone", "Name", "Occupation"]},
+    {"infoID": "4s5t6u7v8w9x", "InfoTypes": ["Nationality", "Hobbies"]},
+    {"infoID": "5y6z7a8b9c0d", "InfoTypes": ["Name", "Age", "Address"]},
+    {"infoID": "6e7f8g9h0i1j", "InfoTypes": ["Gender", "Education", "Occupation"]},
+    {"infoID": "7k8l9m0n1o2p", "InfoTypes": ["Email", "Phone"]},
+    {"infoID": "8q9r0s1t2u3v", "InfoTypes": ["Age", "Nationality", "Hobbies"]},
+    {"infoID": "9w0x1y2z3a4b", "InfoTypes": ["Gender", "Address", "Phone", "Email"]},
+    {"infoID": "0c1d2e3f4g5h", "InfoTypes": ["Name", "Education", "Hobbies"]}
 ]
 
 # 将数据写入 JSON 文件
