@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from StorageSystemClient import StorageSystemClient
 import requests
 import json
+import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -196,17 +198,19 @@ def get_instruction():
 
         deleteLevel=generate_delete_level(max_level)
 
+        deleteAlgParam="d3k7u8sh3iajalfjal82a"
+
         duplicationDelCommand={
         "target": locations,
         "deleteGranularity": deleteGranularity,
         "deleteAlg": deleteMethod,
-        "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
+        "deleteAlgParam": deleteAlgParam,
         "deleteLevel": deleteLevel
         }
         keyDelCommand={
         "target": key_locations,
         "deleteAlg": deleteMethod,
-        "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
+        "deleteAlgParam": deleteAlgParam,
         "deleteLevel": deleteLevel
         }
         duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
@@ -216,14 +220,17 @@ def get_instruction():
         print("the key Delete Command is -->>",keyDelCommand_str)
 
         print("--------------------------------Delete Command Generated-----------------------------------")
-##     删除命令下发
+        ##     删除命令下发
+        # 初始化最终状态为成功
+        final_status = "success"
+
         # 发送duplicationDelCommand
         duplication_response = client.send_dup_del_command(duplicationDelCommand)
         if duplication_response['status'] == 'error':
             print("Error during duplication delete:", duplication_response['message'])
+            final_status = "fail"
         else:
             print("Response from duplication delete:", duplication_response)
-
 
         # 如果keyDelCommand不为空，则发送
         if keyDelCommand["target"]:
@@ -231,15 +238,108 @@ def get_instruction():
 
             if key_del_response['status'] == 'error':
                 print("Error during key delete:", key_del_response['message'])
+                final_status = "fail"
             else:
                 print("Response from key delete:", key_del_response)
         else:
             print("Not encrypted, no need to delete key")
 
-
-#         print("--------------------------------Delete Command Deliveried-----------------------------------")
+        # 打印最终的结果
+        if final_status == "success":
+            print("Final result: Success!")
+        else:
+            print("Final result: Failed!")
         
+        deletePerformTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        print("--------------------------------Delete Command Deliveried-----------------------------------")
+
+        # 创建完整版存证的JSON对象
+
+        # 定义全局变量-数据包头
+        systemID = 1
+        systemIP = "210.73.60.100"
+        mainCMD = 0x0001
+        subCMD = 0x0020
+        evidenceID = "00032dab40af0c56d2fa332a4924d150"
+        msgVersion = 0x1000
+        submittime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # 定义"data"字段中的子字段
+        title = f"系统{systemID}删除{infoID}文件存证记录"
+        abstract = f"系统{systemID}采用算法集合{deleteMethod}删除{infoID}文件存证记录"
+        keyWords = "删除"
+        category = "12-345624"
+        others = "none"
+        # infoID = "BA4A7F24-ACA7-4844-98A5-464786DF5C09"
+        infoType = 1
+        deletePerformer = "王XX"
+        # deletePerformTime = "2022-12-13 09:24:34"
+        deleteDupinfoID = locations
+        deleteControlSet=duplicationDelCommand_str+" and "+keyDelCommand_str
+
+
+
+
+
+        # 定义其他字段
+        dataHash = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
+        datasign = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
+
+        fullEvidence = {
+            "systemID": systemID,
+            "systemIP": systemIP,
+            "mainCMD": mainCMD,
+            "subCMD": subCMD,
+            "evidenceID": evidenceID,
+            "msgVersion": msgVersion,
+            "submittime": submittime,
+            "data": {
+                "title": title,
+                "abstract": abstract,
+                "keyWords": keyWords,
+                "category": category,
+                "others": others,
+                "infoID": infoID,
+                "infoType": infoType,
+                "deletePerformer": deletePerformer,
+                "deletePerformTime": deletePerformTime,
+                "deleteDupinfoID": deleteDupinfoID,
+                "deleteInstruction": {
+                    "affairs_id": affairsID,
+                    "user_id": userID,
+                    "info_id": infoID,
+                    "notifytime": notifytime,
+                    "deleteMethod": deleteMethod,
+                    "deleteGranularity": deleteGranularity
+                },
+                "deleteControlSet": deleteControlSet,
+                "deleteAlg": deleteMethod,
+                "deleteAlgParam": deleteAlgParam,
+                "deleteLevel": deleteLevel
+            },
+            "dataHash": dataHash,
+            "datasign": datasign
+        }
+
+        print(fullEvidence)
+
+        print("--------------------------------Store Evidence Generated-----------------------------------")
+
+        # 确保log文件夹存在，不存在则创建
+        log_dir = "log"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        if infoID:
+            target_file_path = os.path.join(log_dir, f"{infoID}.json")
+            with open(target_file_path, 'w') as target_file:
+                json.dump(fullEvidence, target_file, ensure_ascii=False, indent=4)
+            print(f"File saved as {target_file_path}")
+        else:
+            print("infoID not found in fullEvidence dictionary")
+
+        print("--------------------------------Delete Operation Log Stored-----------------------------------")
 
         
 

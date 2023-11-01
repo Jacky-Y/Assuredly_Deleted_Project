@@ -28,6 +28,23 @@ with open('decentralizedKeyStore.json', 'r') as file:
 with open('info_type.json', 'r') as file:
     info_type_data = json.load(file)
 
+def overwrite_key_file(target_files, alg_param, level):
+    """
+    模拟覆写密钥文件函数
+    :param target_files: 要覆写的目标文件列表
+    :param alg_param: 用于覆写的随机数
+    :param level: 覆写的次数
+    """
+    for _ in range(level):
+        for file_path in target_files:
+            try:
+                # 直接覆写整个文件内容为 alg_param
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(alg_param)
+            except IOError as e:
+                print(f"Error processing file {file_path}: {e}")
+
+
 
 def overwrite_file(target_files, granularity, alg_param, level):
     """
@@ -173,23 +190,17 @@ def key_del():
         return jsonify({"status": "error", "message": "keyDelCommand not provided"}), 400
 
     # 分别解析各个字段
-    target = key_del_command.get('target')
-    delete_alg = key_del_command.get('deleteAlg')
+    target_files = key_del_command.get('target')
     delete_alg_param = key_del_command.get('deleteAlgParam')
     delete_level = key_del_command.get('deleteLevel')
 
-    # 基于解析的数据构建响应
-    response_data = {
-        "status": "success",
-        "parsed_data": {
-            "target": target,
-            "deleteAlg": delete_alg,
-            "deleteAlgParam": delete_alg_param,
-            "deleteLevel": delete_level
-        }
-    }
+    # 执行覆写操作
+    try:
+        overwrite_key_file(target_files, delete_alg_param, delete_level)
+        return jsonify({"status": "success", "message": "Key overwrite operation completed successfully."})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
-    return jsonify(response_data)
 
 
 if __name__ == '__main__':
