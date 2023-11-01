@@ -198,13 +198,13 @@ def get_instruction():
 
         duplicationDelCommand={
         "target": locations,
-        "deleteGranularity": "age",
+        "deleteGranularity": deleteGranularity,
         "deleteAlg": deleteMethod,
         "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
         "deleteLevel": deleteLevel
         }
         keyDelCommand={
-        "target": locations,
+        "target": key_locations,
         "deleteAlg": deleteMethod,
         "deleteAlgParam": "d3k7u8sh3iajalfjal82a",
         "deleteLevel": deleteLevel
@@ -226,7 +226,7 @@ def get_instruction():
 
 
         # 如果keyDelCommand不为空，则发送
-        if keyDelCommand:
+        if keyDelCommand["target"]:
             key_del_response = client.send_key_del_command(keyDelCommand)
 
             if key_del_response['status'] == 'error':

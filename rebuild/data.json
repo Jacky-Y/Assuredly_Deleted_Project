@@ -4,5 +4,5 @@
     "info_id": "1a2b3c4d5e6f",
     "notifytime": "2020-08-01 08:00:00",
     "deleteMethod": "overwrittenDelete",
-    "deleteGranularity": "age"
+    "deleteGranularity": "Phone"
 }
