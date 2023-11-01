@@ -227,7 +227,7 @@ def get_instruction():
 
         # 如果keyDelCommand不为空，则发送
         if keyDelCommand:
-            key_del_response = client.sendKeyDelCommand(keyDelCommand)
+            key_del_response = client.send_key_del_command(keyDelCommand)
 
             if key_del_response['status'] == 'error':
                 print("Error during key delete:", key_del_response['message'])

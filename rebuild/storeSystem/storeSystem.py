@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 import json
-import subprocess
 
 app = Flask(__name__)
 
@@ -23,6 +22,7 @@ with open('centralizedKeyStore.json', 'r') as file:
 # Read from decentralizedKeyStore.json
 with open('decentralizedKeyStore.json', 'r') as file:
     decentralized_key_info = json.load(file)
+
 
 # 从 info_type.json 读取数据
 with open('info_type.json', 'r') as file:
@@ -64,7 +64,7 @@ def get_decentralized_key():
         if item["infoID"] == info_id:
             return jsonify({"infoID": info_id, "Locations": item["Locations"]})
 
-    # If infoID does not exist in the list
+    # If infoID does not exist in the list 
     return jsonify({"Error": "infoID not found"}), 404
 
 @app.route('/getStatus', methods=['POST'])
@@ -101,44 +101,67 @@ def get_key_storage_method():
     # If infoID does not exist in the list
     return jsonify({"Error": "infoID not found"}), 404
 
-
 @app.route('/duplicationDel', methods=['POST'])
 def duplication_del():
-    command = request.json.get('duplicationDelCommand')
-    print(command)
-    # 可能需要对命令进行一些验证
+    # 获取POST请求中的JSON数据
+    data = request.json
 
-    try:
-        result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, timeout=60)  # 设置超时
-        return jsonify({"status": "success", "result": result.decode('utf-8')})
-    except subprocess.CalledProcessError as e:
-        try:
-            message = e.output.decode('utf-8', errors='replace')
-        except AttributeError:
-            # 当e.output为空或不是预期的字节类型时
-            message = str(e)
-        return jsonify({"status": "error", "message": message}), 500
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    # 提取duplicationDelCommand命令
+    duplication_del_command = data.get('duplicationDelCommand')
+    
+    if not duplication_del_command:
+        return jsonify({"status": "error", "message": "duplicationDelCommand not provided"}), 400
+
+    # 分别解析各个字段
+    target = duplication_del_command.get('target')
+    delete_granularity = duplication_del_command.get('deleteGranularity')
+    delete_alg = duplication_del_command.get('deleteAlg')
+    delete_alg_param = duplication_del_command.get('deleteAlgParam')
+    delete_level = duplication_del_command.get('deleteLevel')
+
+    # 基于解析的数据构建响应
+    response_data = {
+        "status": "success",
+        "parsed_data": {
+            "target": target,
+            "deleteGranularity": delete_granularity,
+            "deleteAlg": delete_alg,
+            "deleteAlgParam": delete_alg_param,
+            "deleteLevel": delete_level
+        }
+    }
+
+    return jsonify(response_data)
 
 @app.route('/keyDel', methods=['POST'])
 def key_del():
-    command = request.json.get('keyDelCommand')
-    print(command)
-    # 可能需要对命令进行一些验证
+    # 获取POST请求中的JSON数据
+    data = request.json
 
-    try:
-        result = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT, timeout=60)  # 设置超时
-        return jsonify({"status": "success", "result": result.decode('utf-8')})
-    except subprocess.CalledProcessError as e:
-        try:
-            message = e.output.decode('utf-8', errors='replace')
-        except AttributeError:
-            # 当e.output为空或不是预期的字节类型时
-            message = str(e)
-        return jsonify({"status": "error", "message": message}), 500
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    # 提取keyDelCommand命令
+    key_del_command = data.get('keyDelCommand')
+    
+    if not key_del_command:
+        return jsonify({"status": "error", "message": "keyDelCommand not provided"}), 400
+
+    # 分别解析各个字段
+    target = key_del_command.get('target')
+    delete_alg = key_del_command.get('deleteAlg')
+    delete_alg_param = key_del_command.get('deleteAlgParam')
+    delete_level = key_del_command.get('deleteLevel')
+
+    # 基于解析的数据构建响应
+    response_data = {
+        "status": "success",
+        "parsed_data": {
+            "target": target,
+            "deleteAlg": delete_alg,
+            "deleteAlgParam": delete_alg_param,
+            "deleteLevel": delete_level
+        }
+    }
+
+    return jsonify(response_data)
 
 
 if __name__ == '__main__':
