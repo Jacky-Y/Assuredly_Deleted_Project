@@ -79,41 +79,25 @@ def generate_delete_command_str(command_json):
 
 @app.route('/getOperationLog', methods=['POST'])
 def get_operation_log():
-    # 验证请求的内容类型为application/json
-    if not request.is_json:
-        return jsonify(error="bad request"), 400
-    
-    # 此处可进行一些数据验证和处理，如保存日志等
-    # ...
+    try:
+        # 从 POST 请求中解析 JSON 数据
+        data = request.get_json()
+        infoID = data['data']['infoID']
+        
+        # 构建文件路径
+        file_path = os.path.join('log', f"{infoID}.json")
+        
+        # 检查文件是否存在
+        if os.path.exists(file_path):
+            with open(file_path, 'r') as file:
+                log_data = json.load(file)
+                return jsonify(log_data)
+        else:
+            return jsonify({"error": "Log not found"}), 404
 
-    # 返回指定的JSON数据
-    response_data = {
-        "systemID": 1,
-        "systemIP": "210.73.60.100",
-        "time": "2020-08-01 08:00:00",
-        "data": {
-            "userID": "u100000003",
-            "infoID":"283749abaa234cde",
-            "deletePerformer": "王XX",
-            "deletePerformTime": "2022-12-13 09:24:34",
-            "deleteDupinfoID": "48942ECA-7CDA-4B02-8198-274C4D232E47",
-            "deleteInstruction": {
-                "userID": "u100000003",
-                "infoID":"283749abaa234cde",
-                "deleteMethod": "Software deletion",
-                "deleteGranularity":"age"
-            },
-            "deleteMethod": "Software deletion",
-            "deleteGranularity":"age",
-            "deleteControlSet": "control-constraints cname……",
-            "deleteAlg": 1,
-            "deleteAlgParam": "XX,YY",
-            "deleteLevel": 2,
-            "instructionConfirmationTime": "2022-12-13 09:24:34"
-        },
-        "dataHash": "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
-    }
-    return jsonify(response_data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 
 
@@ -123,7 +107,11 @@ def get_instruction():
         # 获取JSON数据
         data = request.json
 
-    
+#########################删除通知解析#########################
+        print("\n------------------------------")
+        print("Delete Notification Parsed")
+        print("------------------------------")
+
         # 解析内部data字段的值
         affairsID = data.get("affairs_id")
         userID = data.get("user_id")
@@ -132,26 +120,30 @@ def get_instruction():
         deleteMethod = data.get("deleteMethod")
         deleteGranularity = data.get("deleteGranularity")
         
-        
-        # 打印所有解析的值
 
-        print("affairsID:", affairsID)
-        print("Submit Time:", notifytime)
-        print("User ID:", userID)
-        print("Info ID:", infoID)
-        print("Delete Method:", deleteMethod)
-        print("Delete Granularity:", deleteGranularity)
+        print(f"Affairs ID: {affairsID}")
+        print(f"Submit Time: {notifytime}")
+        print(f"User ID: {userID}")
+        print(f"Info ID: {infoID}")
+        print(f"Delete Method: {deleteMethod}")
+        print(f"Delete Granularity: {deleteGranularity}")
 
-        print("--------------------------------Delete Notification Parsed Done-----------------------------------")
+#########################分类分级信息获取#########################
+        print("\n------------------------------")
+        print("Classification Information")
+        print("------------------------------")
 
         sorted_data, max_level = fetch_and_process_data(infoID)
-        print(sorted_data)
-        print("the max sensitive level is ---- >>",max_level)
+
+        print(f"Max Sensitive Level: {max_level}")
+        print(f"Classified Information: {sorted_data}")
 
 
-        
 
-        print("--------------------------------Classification Information Get-----------------------------------")
+#########################副本及密钥信息#########################
+        print("\n------------------------------")
+        print("Duplication and Key Information")
+        print("------------------------------")
 
         client = StorageSystemClient("http://127.0.0.1:7000")
         info_id_to_query = infoID  # 替换为需要查询的实际infoID值
@@ -193,12 +185,17 @@ def get_instruction():
         else:
             print(f"infoID {info_id_to_query} is not encrypted.")
 
-        print("--------------------------------Duplication and Key Information Get-----------------------------------")
-##     生成删除命令
+
+
+
+#########################删除命令生成#########################
+        print("\n------------------------------")
+        print("Delete Commands")
+        print("------------------------------")
 
         deleteLevel=generate_delete_level(max_level)
 
-        deleteAlgParam="d3k7u8sh3iajalfjal82a"
+        deleteAlgParam=infoID
 
         duplicationDelCommand={
         "target": locations,
@@ -215,12 +212,15 @@ def get_instruction():
         }
         duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
         keyDelCommand_str=generate_delete_command_str(keyDelCommand)
+        print(f"Duplication Delete Command: {duplicationDelCommand_str}")
+        print(f"Key Delete Command: {keyDelCommand_str}")
 
-        print("the duplication Delete Command is -->>",duplicationDelCommand_str)
-        print("the key Delete Command is -->>",keyDelCommand_str)
 
-        print("--------------------------------Delete Command Generated-----------------------------------")
-        ##     删除命令下发
+#########################删除命令发送#########################
+        print("\n------------------------------")
+        print("Delete Command Deliveried")
+        print("------------------------------")
+        
         # 初始化最终状态为成功
         final_status = "success"
 
@@ -252,8 +252,12 @@ def get_instruction():
         
         deletePerformTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        print("--------------------------------Delete Command Deliveried-----------------------------------")
 
+
+#########################存证信息#########################
+        print("\n------------------------------")
+        print("Evidence Record")
+        print("------------------------------")
         # 创建完整版存证的JSON对象
 
         # 定义全局变量-数据包头
@@ -322,10 +326,19 @@ def get_instruction():
             "datasign": datasign
         }
 
-        print(fullEvidence)
+        # 使用 json.dumps 打印格式化的 JSON
+        print(json.dumps(fullEvidence, indent=4, ensure_ascii=False))
 
-        print("--------------------------------Store Evidence Generated-----------------------------------")
 
+#########################删除操作日志处理#########################
+        print("\n------------------------------")
+        print("Operation Log")
+        print("------------------------------")
+
+        operation_log=fullEvidence
+        operation_log["classfication_info"]=sorted_data
+        operation_log["deleteMethod"]=deleteMethod
+        operation_log["deleteGranularity"]=deleteGranularity
         # 确保log文件夹存在，不存在则创建
         log_dir = "log"
         if not os.path.exists(log_dir):
@@ -334,19 +347,13 @@ def get_instruction():
         if infoID:
             target_file_path = os.path.join(log_dir, f"{infoID}.json")
             with open(target_file_path, 'w') as target_file:
-                json.dump(fullEvidence, target_file, ensure_ascii=False, indent=4)
+                json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
             print(f"File saved as {target_file_path}")
         else:
-            print("infoID not found in fullEvidence dictionary")
-
-        print("--------------------------------Delete Operation Log Stored-----------------------------------")
-
-        
+            print("infoID not found in operation_log dictionary")
 
 
         
-
-
 
     
 

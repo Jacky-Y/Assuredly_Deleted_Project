@@ -1,4 +1,7 @@
 import json
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
 
 def overwrite_file(target_files, granularity, alg_param, level):
     """
@@ -36,4 +39,109 @@ def overwrite_file(target_files, granularity, alg_param, level):
             except (IOError, json.JSONDecodeError) as e:
                 print(f"Error processing file {file_path}: {e}")
 
-overwrite_file(["./storeSystem/test/0c1d2e3f4g5h.json"], "", "sdsdfadgagaga", 1)
+
+
+def key_generation():
+    private_key = ec.generate_private_key(ec.SECP256R1())
+    public_key = private_key.public_key()
+    return private_key, public_key
+
+def compute_vrf(private_key, message):
+    signature = private_key.sign(message, ec.ECDSA(hashes.SHA256()))
+    digest = hashes.Hash(hashes.SHA256())
+    digest.update(signature)
+    vrf_output = digest.finalize()
+    return vrf_output, signature
+
+
+def verify_vrf(public_key, message, vrf_output, proof):
+    try:
+        public_key.verify(proof, message, ec.ECDSA(hashes.SHA256()))
+        digest = hashes.Hash(hashes.SHA256())
+        digest.update(proof)
+        expected_vrf_output = digest.finalize()
+        return expected_vrf_output == vrf_output
+    except:
+        return False
+
+
+# 序列化密钥并保存到文件
+def serialize_keys(private_key, public_key, private_file='private_key.pem', public_file='public_key.pem'):
+    # 私钥序列化
+    private_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption()
+    )
+    with open(private_file, 'wb') as f:
+        f.write(private_pem)
+
+    # 公钥序列化
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    with open(public_file, 'wb') as f:
+        f.write(public_pem)
+
+# # 从文件中读取并反序列化密钥
+# def deserialize_keys(private_file='private_key.pem', public_file='public_key.pem'):
+#     # 从文件读取并反序列化私钥
+#     with open(private_file, 'rb') as f:
+#         private_key = serialization.load_pem_private_key(
+#             f.read(),
+#             password=None,
+#         )
+    
+#     # 从文件读取并反序列化公钥
+#     with open(public_file, 'rb') as f:
+#         public_key = serialization.load_pem_public_key(
+#             f.read(),
+#         )
+
+#     return private_key, public_key
+
+# 从文件中读取并反序列化密钥
+def deserialize_keys(private_file='private_key.pem'):
+    # 从文件读取并反序列化私钥
+    with open(private_file, 'rb') as f:
+        private_key = serialization.load_pem_private_key(
+            f.read(),
+            password=None,
+        )
+
+    return private_key
+
+
+# # 从文件中读取并反序列化密钥
+# def deserialize_keys(public_file='public_key.pem'):
+    
+#     # 从文件读取并反序列化公钥
+#     with open(public_file, 'rb') as f:
+#         public_key = serialization.load_pem_public_key(
+#             f.read(),
+#         )
+
+#     return  public_key
+
+if __name__=="__main__":
+    # Test
+    private_key, public_key = key_generation()
+
+    # serialize_keys(private_key, public_key)
+
+    message = b"Hello, VRF!"
+    vrf_output, proof = compute_vrf(private_key, message)
+    is_valid = verify_vrf(public_key, message, vrf_output, proof)
+
+    print(private_key)
+    print(public_key)
+    print(f"Message: {message}")
+    print(f"VRF Output: {vrf_output.hex()}")
+    print(f"Proof: {proof.hex()}")
+    print("VRF Output:",vrf_output)
+    print("Proof:",proof)
+    print(f"Is valid: {is_valid}")
+                
+
+# overwrite_file(["./storeSystem/test/0c1d2e3f4g5h.json"], "", "sdsdfadgagaga", 1)

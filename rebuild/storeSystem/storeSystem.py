@@ -1,7 +1,22 @@
 from flask import Flask, request, jsonify
 import json
-
+from util import *
+import base64
 app = Flask(__name__)
+
+
+# 从文件中读取并反序列化密钥
+def deserialize_keys(private_file='private_key.pem'):
+    # 从文件读取并反序列化私钥
+    with open(private_file, 'rb') as f:
+        private_key = serialization.load_pem_private_key(
+            f.read(),
+            password=None,
+        )
+
+    return private_key
+
+private_key=deserialize_keys('private_key.pem')
 
 # Read from storeStatus.json
 with open('storeStatus.json', 'r') as file:
@@ -171,9 +186,18 @@ def duplication_del():
     delete_alg_param = duplication_del_command.get('deleteAlgParam')
     delete_level = duplication_del_command.get('deleteLevel')
 
+    #计算vrf
+    vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
+
+    # 将二进制数据转换为 Base64 字符串
+    base64_vrf_output = base64.b64encode(vrf_output)
+    base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
+    print("使用以下VRF随机输出进行覆写副本文件:",base64_vrf_output_string)
+
+
     # 执行覆写操作
     try:
-        overwrite_file(target_files, delete_granularity, delete_alg_param, delete_level)
+        overwrite_file(target_files, delete_granularity, base64_vrf_output_string, delete_level)
         return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -194,9 +218,17 @@ def key_del():
     delete_alg_param = key_del_command.get('deleteAlgParam')
     delete_level = key_del_command.get('deleteLevel')
 
+    #计算vrf
+    vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
+
+    # 将二进制数据转换为 Base64 字符串
+    base64_vrf_output = base64.b64encode(vrf_output)
+    base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
+    print("使用以下VRF随机输出进行覆写密钥文件:",base64_vrf_output_string)
+
     # 执行覆写操作
     try:
-        overwrite_key_file(target_files, delete_alg_param, delete_level)
+        overwrite_key_file(target_files, base64_vrf_output_string, delete_level)
         return jsonify({"status": "success", "message": "Key overwrite operation completed successfully."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
