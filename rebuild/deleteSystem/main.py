@@ -346,7 +346,7 @@ def get_instruction():
 
         if infoID:
             target_file_path = os.path.join(log_dir, f"{infoID}.json")
-            with open(target_file_path, 'w') as target_file:
+            with open(target_file_path, 'w', encoding='utf-8') as target_file:
                 json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
             print(f"File saved as {target_file_path}")
         else:
