@@ -1,8 +1,14 @@
 {
-    "affairs_id": "16881233",
-    "user_id": "u100000003",
-    "info_id": "0c1d2e3f4g5h",
-    "notifytime": "2020-08-01 08:00:00",
-    "deleteMethod": "overwrittenDelete",
-    "deleteGranularity": "Phone"
+    "systemID": "0x40000000",
+    "systemIP": "127.0.0.1",
+    "time": "2020-08-01 08:00:00",
+    "data": {
+        "affairsID": "16881233",
+        "userID": "u100000003",
+        "infoID": "0c1d2e3f4g5h",
+        "deleteMethod": "overwrittenDelete",
+        "deleteGranularity": "Name",
+        "deleteNotifyTree":"a tree"
+    },
+    "dataHash": "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
 }

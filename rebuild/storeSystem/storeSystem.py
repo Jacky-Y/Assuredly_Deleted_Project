@@ -100,15 +100,15 @@ def overwrite_file(target_files, granularity, alg_param, level):
 @app.route('/getInfoType', methods=['POST'])
 def get_info_type():
     # 获取 POST 请求中的 infoID
-    info_id = request.json.get('infoID')
+    infoID = request.json.get('infoID')
 
     # 如果没有提供 infoID，则返回错误
-    if not info_id:
+    if not infoID:
         return jsonify({'error': 'infoID not provided'}), 400
 
     # 在 info_type_data 中查找 infoID
     for item in info_type_data:
-        if item["infoID"] == info_id:
+        if item["infoID"] == infoID:
             return jsonify({'InfoTypes': item['InfoTypes']}), 200
 
     # 如果没找到匹配的 infoID，则返回错误
@@ -117,10 +117,10 @@ def get_info_type():
 @app.route('/getCentralizedKey', methods=['POST'])
 def get_centralized_key():
     data = request.json
-    info_id = data.get("infoID", "")
+    infoID = data.get("infoID", "")
     for item in centralized_key_info:
-        if item["infoID"] == info_id:
-            return jsonify({"infoID": info_id, "Locations": item["Locations"]})
+        if item["infoID"] == infoID:
+            return jsonify({"infoID": infoID, "Locations": item["Locations"]})
 
     # If infoID does not exist in the list
     return jsonify({"Error": "infoID not found"}), 404
@@ -128,10 +128,10 @@ def get_centralized_key():
 @app.route('/getDecentralizedKey', methods=['POST'])
 def get_decentralized_key():
     data = request.json
-    info_id = data.get("infoID", "")
+    infoID = data.get("infoID", "")
     for item in decentralized_key_info:
-        if item["infoID"] == info_id:
-            return jsonify({"infoID": info_id, "Locations": item["Locations"]})
+        if item["infoID"] == infoID:
+            return jsonify({"infoID": infoID, "Locations": item["Locations"]})
 
     # If infoID does not exist in the list 
     return jsonify({"Error": "infoID not found"}), 404
@@ -139,10 +139,10 @@ def get_decentralized_key():
 @app.route('/getStatus', methods=['POST'])
 def get_status():
     data = request.json
-    info_id = data.get("infoID", "")
+    infoID = data.get("infoID", "")
     for item in info_status:
-        if item["infoID"] == info_id:
-            return jsonify({"infoID": info_id, "Status": item["Status"]})
+        if item["infoID"] == infoID:
+            return jsonify({"infoID": infoID, "Status": item["Status"]})
 
     # If infoID does not exist in the list
     return jsonify({"Error": "infoID not found"}), 404
@@ -151,10 +151,10 @@ def get_status():
 @app.route('/getDuplicationLocations', methods=['POST'])
 def get_duplication_locations():
     data = request.json
-    info_id = data.get("infoID", "")
+    infoID = data.get("infoID", "")
     for item in duplication_info:
-        if item["infoID"] == info_id:
-            return jsonify({"infoID": info_id, "Locations": item["Locations"]})
+        if item["infoID"] == infoID:
+            return jsonify({"infoID": infoID, "Locations": item["Locations"]})
 
     # If infoID does not exist in the list
     return jsonify({"Error": "infoID not found"}), 404
@@ -162,10 +162,10 @@ def get_duplication_locations():
 @app.route('/getKeyStorageMethod', methods=['POST'])
 def get_key_storage_method():
     data = request.json
-    info_id = data.get("infoID", "")
+    infoID = data.get("infoID", "")
     for item in key_status:
-        if item["infoID"] == info_id:
-            return jsonify({"infoID": info_id, "KeyStorageMethod": item["KeyStorageMethod"]})
+        if item["infoID"] == infoID:
+            return jsonify({"infoID": infoID, "KeyStorageMethod": item["KeyStorageMethod"]})
 
     # If infoID does not exist in the list
     return jsonify({"Error": "infoID not found"}), 404

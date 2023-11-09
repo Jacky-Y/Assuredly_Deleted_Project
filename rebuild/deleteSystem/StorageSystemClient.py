@@ -8,31 +8,31 @@ class StorageSystemClient:
             "Content-Type": "application/json"
         }
 
-    def _post_request(self, endpoint, info_id):
+    def _post_request(self, endpoint, infoID):
         url = f"{self.base_url}/{endpoint}"
-        data = {"infoID": info_id}
+        data = {"infoID": infoID}
         response = requests.post(url, headers=self.headers, json=data, timeout=10)  # 添加超时
         response.raise_for_status()
         return response.json()
 
-    def get_status(self, info_id):
-        json_data = self._post_request("getStatus", info_id)
+    def get_status(self, infoID):
+        json_data = self._post_request("getStatus", infoID)
         return json_data.get("Status")
 
-    def get_duplication_locations(self, info_id):
-        json_data = self._post_request("getDuplicationLocations", info_id)
+    def get_duplication_locations(self, infoID):
+        json_data = self._post_request("getDuplicationLocations", infoID)
         return json_data.get("Locations")
 
-    def get_centralized_key(self, info_id):
-        json_data = self._post_request("getCentralizedKey", info_id)
+    def get_centralized_key(self, infoID):
+        json_data = self._post_request("getCentralizedKey", infoID)
         return json_data.get("Locations")
 
-    def get_decentralized_key(self, info_id):
-        json_data = self._post_request("getDecentralizedKey", info_id)
+    def get_decentralized_key(self, infoID):
+        json_data = self._post_request("getDecentralizedKey", infoID)
         return json_data.get("Locations")
 
-    def get_key_storage_method(self, info_id):
-        json_data = self._post_request("getKeyStorageMethod", info_id)
+    def get_key_storage_method(self, infoID):
+        json_data = self._post_request("getKeyStorageMethod", infoID)
         return json_data.get("KeyStorageMethod")
 
     def send_dup_del_command(self, duplication_del_command):

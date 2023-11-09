@@ -105,28 +105,34 @@ def get_operation_log():
 def get_instruction():
     try:
         # 获取JSON数据
-        data = request.json
+        outside_data = request.json
+        data = outside_data.get("data")
 
 #########################删除通知解析#########################
         print("\n------------------------------")
         print("Delete Notification Parsed")
         print("------------------------------")
 
+        #解析外部的字段
+        notifySystemID = outside_data.get("systemID")
+        notifySystemIP = outside_data.get("systemIP")
+        notifyTime = outside_data.get("time")
+
         # 解析内部data字段的值
-        affairsID = data.get("affairs_id")
-        userID = data.get("user_id")
-        infoID = data.get("info_id")
-        notifytime = data.get("notifytime")
+        affairsID = data.get("affairsID")
+        userID = data.get("userID")
+        infoID = data.get("infoID")
         deleteMethod = data.get("deleteMethod")
         deleteGranularity = data.get("deleteGranularity")
+        deleteNotifyTree=data.get("deleteNotifyTree")
         
-
+        print(f"Submit Time: {notifyTime}")
         print(f"Affairs ID: {affairsID}")
-        print(f"Submit Time: {notifytime}")
         print(f"User ID: {userID}")
         print(f"Info ID: {infoID}")
         print(f"Delete Method: {deleteMethod}")
         print(f"Delete Granularity: {deleteGranularity}")
+        print(f"Delete NotifyTree: {deleteNotifyTree}")
 
 #########################分类分级信息获取#########################
         print("\n------------------------------")
@@ -146,44 +152,44 @@ def get_instruction():
         print("------------------------------")
 
         client = StorageSystemClient("http://127.0.0.1:7000")
-        info_id_to_query = infoID  # 替换为需要查询的实际infoID值
+        infoID_to_query = infoID  # 替换为需要查询的实际infoID值
 
         # Step 1: 查询infoID的存储状态
-        status = client.get_status(info_id_to_query)
-        print(f"Storage status for infoID {info_id_to_query}: {status}")
+        status = client.get_status(infoID_to_query)
+        print(f"Storage status for infoID {infoID_to_query}: {status}")
 
         # Step 2: 查询infoID的副本位置信息
-        locations = client.get_duplication_locations(info_id_to_query)
+        locations = client.get_duplication_locations(infoID_to_query)
         if locations:
-            print(f"Locations for infoID {info_id_to_query}: {locations}")
+            print(f"Locations for infoID {infoID_to_query}: {locations}")
         else:
-            print(f"No duplication locations found for infoID {info_id_to_query}")
+            print(f"No duplication locations found for infoID {infoID_to_query}")
 
         # Step 3: 判断是否为加密状态
         key_locations=[]
 
         if status == "Encrypted":
             # Step 4: 查询密钥存储方式
-            key_storage_method = client.get_key_storage_method(info_id_to_query)
+            key_storage_method = client.get_key_storage_method(infoID_to_query)
             
             if key_storage_method:
                 # Step 5: 根据密钥存储方式获取密钥位置
                 if key_storage_method == "Centralized":
-                    key_locations = client.get_centralized_key(info_id_to_query)
+                    key_locations = client.get_centralized_key(infoID_to_query)
                 elif key_storage_method == "Decentralized":
-                    key_locations = client.get_decentralized_key(info_id_to_query)
+                    key_locations = client.get_decentralized_key(infoID_to_query)
                 else:
                     print(f"Unknown key storage method: {key_storage_method}")
                     key_locations = None
 
                 if key_locations:
-                    print(f"Key locations for infoID {info_id_to_query}: {key_locations}")
+                    print(f"Key locations for infoID {infoID_to_query}: {key_locations}")
                 else:
                     print("Failed to retrieve key locations.")
             else:
                 print("Failed to retrieve key storage method.")
         else:
-            print(f"infoID {info_id_to_query} is not encrypted.")
+            print(f"infoID {infoID_to_query} is not encrypted.")
 
 
 
@@ -281,6 +287,7 @@ def get_instruction():
         # deletePerformTime = "2022-12-13 09:24:34"
         deleteDupinfoID = locations
         deleteControlSet=duplicationDelCommand_str+" and "+keyDelCommand_str
+        deleteAlg_num=1
 
 
 
@@ -310,15 +317,15 @@ def get_instruction():
                 "deletePerformTime": deletePerformTime,
                 "deleteDupinfoID": deleteDupinfoID,
                 "deleteInstruction": {
-                    "affairs_id": affairsID,
-                    "user_id": userID,
-                    "info_id": infoID,
-                    "notifytime": notifytime,
+                    "affairsID": affairsID,
+                    "userID": userID,
+                    "infoID": infoID,
+                    "notifyTime": notifyTime,
                     "deleteMethod": deleteMethod,
                     "deleteGranularity": deleteGranularity
                 },
                 "deleteControlSet": deleteControlSet,
-                "deleteAlg": deleteMethod,
+                "deleteAlg": deleteAlg_num,
                 "deleteAlgParam": deleteAlgParam,
                 "deleteLevel": deleteLevel
             },
@@ -335,17 +342,26 @@ def get_instruction():
         print("Operation Log")
         print("------------------------------")
 
+        #添加操作日志的特有的字段
         operation_log=fullEvidence
-        operation_log["classfication_info"]=sorted_data
-        operation_log["deleteMethod"]=deleteMethod
-        operation_log["deleteGranularity"]=deleteGranularity
+
+        del operation_log["data"]["others"]
+        operation_log["data"]["affairsID"]=affairsID
+        operation_log["data"]["userID"]=userID
+        operation_log["data"]["classfication_info"]=sorted_data
+        operation_log["data"]["deleteMethod"]=deleteMethod
+        operation_log["data"]["deleteGranularity"]=deleteGranularity
+        if key_locations:
+            operation_log["data"]["deleteKeyinfoID"]=key_locations
+        else:
+            operation_log["data"]["deleteKeyinfoID"]=''
         # 确保log文件夹存在，不存在则创建
         log_dir = "log"
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
 
         if infoID:
-            target_file_path = os.path.join(log_dir, f"{infoID}.json")
+            target_file_path = os.path.join(log_dir, f"{infoID}-{affairsID}.json")
             with open(target_file_path, 'w', encoding='utf-8') as target_file:
                 json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
             print(f"File saved as {target_file_path}")

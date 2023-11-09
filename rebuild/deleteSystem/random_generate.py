@@ -7,9 +7,9 @@ possible_info_types = ["Name", "Gender", "Age", "Address", "Phone", "Email", "Oc
 
 # 随机生成数据
 def generate_data():
-    info_id = str(uuid.uuid4()).replace('-', '')  # 生成一个没有"-"的UUID字符串
+    infoID = str(uuid.uuid4()).replace('-', '')  # 生成一个没有"-"的UUID字符串
     info_types = random.sample(possible_info_types, random.randint(1, len(possible_info_types)))  # 随机选择 InfoType
-    return {"infoID": info_id, "InfoTypes": info_types}
+    return {"infoID": infoID, "InfoTypes": info_types}
 
 data = [generate_data() for _ in range(10)]
 

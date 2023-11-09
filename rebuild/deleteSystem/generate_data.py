@@ -39,11 +39,11 @@ data2 = [
 ]
 
 # 将数据写入 JSON 文件
-with open('info_ids.json', 'w') as file:
+with open('infoIDs.json', 'w') as file:
     json.dump(data2, file, indent=4)
 
 # 从 JSON 文件中读取数据
-with open('info_ids.json', 'r') as file:
+with open('infoIDs.json', 'r') as file:
     loaded_data = json.load(file)
 
 # 打印读取的数据
