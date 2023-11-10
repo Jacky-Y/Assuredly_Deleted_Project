@@ -5,8 +5,24 @@ import json
 import os
 from datetime import datetime
 
+
+#定义全局变量
+ifSendException = False
+deletePerformer = "default Performer"
+preset_duration_seconds=10
+
 app = Flask(__name__)
 
+
+class DeleteFailException(Exception):
+    def __init__(self, message, error_data):
+        super().__init__(message)
+        self.error_data = error_data
+
+class TimeoutException(Exception):
+    def __init__(self, message, error_data):
+        super().__init__(message)
+        self.error_data = error_data
 
 def fetch_and_process_data(infoID):
     # 第一步：从 http://127.0.0.1:7000/getInfoType 获取 InfoType 列表
@@ -125,6 +141,8 @@ def get_instruction():
         deleteMethod = data.get("deleteMethod")
         deleteGranularity = data.get("deleteGranularity")
         deleteNotifyTree=data.get("deleteNotifyTree")
+
+        delete_instruction_str=f"在{notifyTime}时间下发以{deleteMethod}方式删除{infoID}信息的{deleteGranularity}的指令"
         
         print(f"Submit Time: {notifyTime}")
         print(f"Affairs ID: {affairsID}")
@@ -231,6 +249,7 @@ def get_instruction():
         final_status = "success"
 
         # 发送duplicationDelCommand
+        send_time = datetime.now()  # 记录发送前的时间
         duplication_response = client.send_dup_del_command(duplicationDelCommand)
         if duplication_response['status'] == 'error':
             print("Error during duplication delete:", duplication_response['message'])
@@ -250,13 +269,54 @@ def get_instruction():
         else:
             print("Not encrypted, no need to delete key")
 
+        deletePerformTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # 引起异常的逻辑
+        # 检查是否删除成功
+        if final_status == "fail":
+            error_data = {
+                "data": {
+                    "DataType": 0x4102,
+                    "content": {
+                        "infoID": infoID,
+                        "affairsID": affairsID,
+                        "deleteInstruction": delete_instruction_str,
+                        "deletePerformer": deletePerformer,
+                        "deletePerformTime": deletePerformTime,
+                        "deleteControlSet": duplicationDelCommand_str+" and "+keyDelCommand_str,
+                        "deleteDupResult": f"未成功对{infoID}副本完成删除"
+                    }
+                }
+            }
+            print("Failure, delete failed")
+            raise DeleteFailException("Delete operation failed.", error_data)
+
+        # 检查是否超过预设时间
+        if (datetime.now() - send_time).total_seconds() > preset_duration_seconds:
+            error_data = {
+                "data": {
+                    "DataType": 0x4102,
+                    "content": {
+                        "infoID": infoID,
+                        "affairsID": affairsID,
+                        "deleteInstruction": delete_instruction_str,
+                        "deletePerformer": deletePerformer,
+                        "deletePerformTime": deletePerformTime,
+                        "timeout": (datetime.now() - send_time).total_seconds()
+                    }
+                }
+            }
+            print("Time out, delete failed")
+            raise TimeoutException("Operation took longer than the preset time.", error_data)
+
+
         # 打印最终的结果
         if final_status == "success":
             print("Final result: Success!")
         else:
             print("Final result: Failed!")
         
-        deletePerformTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
 
 
 
@@ -283,7 +343,6 @@ def get_instruction():
         others = "none"
         # infoID = "BA4A7F24-ACA7-4844-98A5-464786DF5C09"
         infoType = 1
-        deletePerformer = "王XX"
         # deletePerformTime = "2022-12-13 09:24:34"
         deleteDupinfoID = locations
         deleteControlSet=duplicationDelCommand_str+" and "+keyDelCommand_str
@@ -374,6 +433,33 @@ def get_instruction():
     
 
         return jsonify({"message": "Data received and parsed successfully!"}), 200
+
+    except DeleteFailException as e:
+        error_data = e.error_data
+        infoID = error_data["data"]["content"]["infoID"]
+        affairsID = error_data["data"]["content"]["affairsID"]
+        with open(f'./err2/{infoID}-{affairsID}.json', 'w') as f:
+            json.dump(error_data, f,indent=4)
+
+        if ifSendException:
+            # 发送数据包到远程主机的代码 ...
+            pass
+
+        return jsonify({"error": str(e)}), 400
+
+    except TimeoutException as e:
+        error_data = e.error_data
+        infoID = error_data["data"]["content"]["infoID"]
+        affairsID = error_data["data"]["content"]["affairsID"]
+        with open(f'./err1/{infoID}-{affairsID}.json', 'w') as f:
+            json.dump(error_data, f,indent=4)
+
+        if ifSendException:
+            # 发送数据包到远程主机的代码 ...
+            pass
+
+        return jsonify({"error": str(e)}), 400
+
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

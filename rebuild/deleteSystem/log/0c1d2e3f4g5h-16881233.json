@@ -5,7 +5,7 @@
     "subCMD": 32,
     "evidenceID": "00032dab40af0c56d2fa332a4924d150",
     "msgVersion": 4096,
-    "submittime": "2023-11-10 00:34:52",
+    "submittime": "2023-11-10 17:05:03",
     "data": {
         "title": "系统1删除0c1d2e3f4g5h文件存证记录",
         "abstract": "系统1采用算法集合overwrittenDelete删除0c1d2e3f4g5h文件存证记录",
@@ -13,8 +13,8 @@
         "category": "12-345624",
         "infoID": "0c1d2e3f4g5h",
         "infoType": 1,
-        "deletePerformer": "王XX",
-        "deletePerformTime": "2023-11-10 00:34:52",
+        "deletePerformer": "default Performer",
+        "deletePerformTime": "2023-11-10 17:05:03",
         "deleteDupinfoID": [
             "./c/0c1d2e3f4g5h.json",
             "./d/0c1d2e3f4g5h.json"

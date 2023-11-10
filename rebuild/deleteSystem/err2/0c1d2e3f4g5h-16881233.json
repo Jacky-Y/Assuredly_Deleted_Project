@@ -1,0 +1,14 @@
+{
+    "data": {
+        "DataType": 16642,
+        "content": {
+            "infoID": "0c1d2e3f4g5h",
+            "affairsID": "16881233",
+            "deleteInstruction": "\u57282020-08-01 08:00:00\u65f6\u95f4\u4e0b\u53d1\u4ee5overwrittenDelete\u65b9\u5f0f\u5220\u96640c1d2e3f4g5h\u4fe1\u606f\u7684Name\u7684\u6307\u4ee4",
+            "deletePerformer": "default Performer",
+            "deletePerformTime": "2023-11-10 17:04:31",
+            "deleteControlSet": "delete Name of ['./c/0c1d2e3f4g5h.json', './d/0c1d2e3f4g5h.json'] using deleteAlg=overwrittenDelete with deleteAlgParam=0c1d2e3f4g5h at deleteLevel= 7 and delete ['./c/0c1d2e3f4g5h_key.txt', './d/0c1d2e3f4g5h_key.txt'] using deleteAlg=overwrittenDelete with deleteAlgParam=0c1d2e3f4g5h at deleteLevel= 7",
+            "deleteDupResult": "\u672a\u6210\u529f\u5bf90c1d2e3f4g5h\u526f\u672c\u5b8c\u6210\u5220\u9664"
+        }
+    }
+}
