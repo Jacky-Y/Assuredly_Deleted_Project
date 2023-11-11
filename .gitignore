@@ -1,11 +1,22 @@
 **/__pycache__/
-rebuild/storeSystem/c/
-rebuild/storeSystem/d/
-rebuild/storeSystem/e/
-rebuild/storeSystem/f/
-rebuild/**/log/
-rebuild/deleteSystem/err1/
-rebuild/deleteSystem/err2/
+# 忽略 rebuild/storeSystem 下的所有文件，除了 .gitkeep
+rebuild/storeSystem/c/*
+rebuild/storeSystem/d/*
+rebuild/storeSystem/e/*
+rebuild/storeSystem/f/*
+!rebuild/storeSystem/c/.gitkeep
+!rebuild/storeSystem/d/.gitkeep
+!rebuild/storeSystem/e/.gitkeep
+!rebuild/storeSystem/f/.gitkeep
 
+# 忽略 rebuild 下所有 log 目录的内容，除了 .gitkeep
+rebuild/**/log/*
+!rebuild/**/log/.gitkeep
+
+# 忽略特定的 err1 和 err2 目录，除了 .gitkeep
+rebuild/deleteSystem/err1/*
+rebuild/deleteSystem/err2/*
+!rebuild/deleteSystem/err1/.gitkeep
+!rebuild/deleteSystem/err2/.gitkeep
 
 
