@@ -10,7 +10,10 @@
             "label": "Run Python Script 1",
             "type": "shell",
             "command": "python",
-            "args": ["script1.py"],
+            "args": ["classifySystem.py"],
+            "options": {
+                "cwd": "${workspaceFolder}/classifySystem"
+            },
             "presentation": {
                 "panel": "new"
             }
@@ -19,7 +22,10 @@
             "label": "Run Python Script 2",
             "type": "shell",
             "command": "python",
-            "args": ["script2.py"],
+            "args": ["main.py"],
+            "options": {
+                "cwd": "${workspaceFolder}/deleteSystem"
+            },
             "presentation": {
                 "panel": "new"
             }
@@ -28,10 +34,14 @@
             "label": "Run Python Script 3",
             "type": "shell",
             "command": "python",
-            "args": ["script3.py"],
+            "args": ["storeSystem.py"],
+            "options": {
+                "cwd": "${workspaceFolder}/storeSystem"
+            },
             "presentation": {
                 "panel": "new"
             }
         }
+        
     ]
 }
