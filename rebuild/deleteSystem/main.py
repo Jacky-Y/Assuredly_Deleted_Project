@@ -3,10 +3,17 @@ from StorageSystemClient import StorageSystemClient
 import requests
 import json
 import os
+import argparse
 from datetime import datetime
+from flask import current_app
+from util import NotificationTreeUtils
+import threading
+import time
 
 
 #定义全局变量
+node_statuses={}
+status_updated = False
 ifSendException = False
 deletePerformer = "default Performer"
 preset_duration_seconds=10
@@ -93,6 +100,87 @@ def generate_delete_command_str(command_json):
     return command_str
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Flask Node Startup Configuration')
+    parser.add_argument('system_id', help='Name of the node to start')
+    return parser.parse_args()
+
+def load_config(system_id):
+    try:
+        with open('config.json', 'r') as file:
+            config = json.load(file)
+            for node in config['nodes']:
+                if node['system_id'] == system_id:
+                    return node
+    except FileNotFoundError:
+        print("配置文件未找到。请确保 config.json 文件在正确的位置。")
+    except json.JSONDecodeError:
+        print("配置文件格式错误。请确保它是有效的 JSON 格式。")
+    except Exception as e:
+        print(f"读取配置文件时发生错误：{e}")
+
+    return None
+
+
+def send_deletion_message(rootNode,system_id, final_status):
+    # 从配置文件中加载根节点信息
+    root_node_config = load_config(rootNode)
+    if root_node_config is None:
+        print("无法加载根节点配置。")
+        return
+
+    root_node_ip = root_node_config['ip']
+    root_node_port=root_node_config['port']
+
+    # 构造数据包
+    data = {'node_id':system_id,'status': final_status}
+
+    # 发送 POST 请求到根节点的 /gatherResult 路由
+    url = f'http://{root_node_ip}:{root_node_port}/gatherResult'
+    try:
+        response = requests.post(url, json=data)
+        print(f"Message sent to root node. Response: {response.status_code}")
+    except requests.RequestException as e:
+        print(f"Error sending message to root node: {e}")
+
+def wait_for_results(timeout):
+    print(f"开始等待来自{list(node_statuses.keys())}的删除结果")
+    global status_updated
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if status_updated:
+            # 显示每个节点的当前状态
+            for node, status in node_statuses.items():
+                print(f"节点 {node} 状态: {status}")
+            status_updated = False  # 重置标志
+
+        if all(status == 'success' for status in node_statuses.values()):
+            print("所有节点都成功报告了删除结果。")
+            return
+        time.sleep(1)  # 等待一秒再次检查
+
+    # 超时后检查未成功报告的节点
+    for node, status in node_statuses.items():
+        if status != 'success':
+            print(f"节点 {node} 未成功报告删除结果。")
+
+
+
+@app.route('/gatherResult', methods=['POST'])
+def gather_result():
+    global status_updated
+    data = request.json
+    node_id = data.get('node_id')
+    status = data.get('status')
+
+    if node_id and status:
+        node_statuses[node_id] = status
+        status_updated = True  # 标记状态已更新
+        return jsonify({"message": "Result received"}), 200
+    else:
+        return jsonify({"error": "Invalid data received"}), 400
+
+
 @app.route('/getOperationLog', methods=['POST'])
 def get_operation_log():
     try:
@@ -135,13 +223,21 @@ def get_instruction():
         notifyTime = outside_data.get("time")
 
         # 解析内部data字段的值
+        systemID=current_app.config.get('SYSTEM_ID')
         affairsID = data.get("affairsID")
         userID = data.get("userID")
         infoID = data.get("infoID")
         deleteMethod = data.get("deleteMethod")
         deleteGranularity = data.get("deleteGranularity")
-        deleteNotifyTree=data.get("deleteNotifyTree")
+        deleteNotifyTree= json.loads(data.get("deleteNotifyTree"))
+        parentNode = NotificationTreeUtils.find_parent(deleteNotifyTree, systemID)
+        rootNode = NotificationTreeUtils.get_root_node(deleteNotifyTree)
+        otherNode=NotificationTreeUtils.find_all_nodes_except(deleteNotifyTree, systemID)
 
+        isRoot=False
+        if systemID==rootNode:
+            isRoot=True
+        
         delete_instruction_str=f"在{notifyTime}时间下发以{deleteMethod}方式删除{infoID}信息的{deleteGranularity}的指令"
         
         print(f"Submit Time: {notifyTime}")
@@ -151,6 +247,10 @@ def get_instruction():
         print(f"Delete Method: {deleteMethod}")
         print(f"Delete Granularity: {deleteGranularity}")
         print(f"Delete NotifyTree: {deleteNotifyTree}")
+        print(f"Parent Node: {parentNode}")
+        print(f"Root Node: {rootNode}")
+        print(f"Other Node: {otherNode}")
+        print(f"Myself: {systemID}")
 
 #########################分类分级信息获取#########################
         print("\n------------------------------")
@@ -327,7 +427,6 @@ def get_instruction():
         # 创建完整版存证的JSON对象
 
         # 定义全局变量-数据包头
-        systemID = 1
         systemIP = "210.73.60.100"
         mainCMD = 0x0001
         subCMD = 0x0020
@@ -427,13 +526,33 @@ def get_instruction():
         else:
             print("infoID not found in operation_log dictionary")
 
+#########################删除结果汇总#########################
+        print("\n------------------------------")
+        print("Delete Result Collected")
+        print("------------------------------")
+        if isRoot==True:
+            if otherNode==[]:
+                print("Root node is the only node, deletion completed")
+            else:
+                global node_statuses  # 指定接下来使用的是全局变量
+                node_statuses = {node: 'pending' for node in otherNode}
+                # 启动等待结果的线程
+                timeout = 60  # 设置超时时间
+                wait_thread = threading.Thread(target=wait_for_results, args=(timeout,))
+                wait_thread.start()
+        else:
+            print("sending results to the root code")
+            send_deletion_message(rootNode,systemID,final_status)
+            #向源域节点发送消息
 
         
-
-    
-
+#########################成功返回#########################
         return jsonify({"message": "Data received and parsed successfully!"}), 200
 
+#########################异常处理#########################
+        print("\n------------------------------")
+        print("Exception Occurs")
+        print("------------------------------")
     except DeleteFailException as e:
         error_data = e.error_data
         infoID = error_data["data"]["content"]["infoID"]
@@ -463,6 +582,18 @@ def get_instruction():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-if __name__ == "__main__":
-    app.run()
+# if __name__ == "__main__":
+#     app.run()
     # app.run(host='10.12.170.110')
+
+if __name__ == "__main__":
+    args = parse_arguments()
+    node_config = load_config(args.system_id)
+
+    if node_config:
+        app.config['SYSTEM_ID'] = args.system_id  # 存储 system_id 到 app.config
+        app.config['HOST'] = node_config['ip']
+        app.config['PORT'] = node_config['port']
+        app.run(host=node_config['ip'], port=node_config['port'])
+    else:
+        print(f"No configuration found for node {args.system_id}")
