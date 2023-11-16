@@ -352,7 +352,7 @@ def get_instruction():
         send_time = datetime.now()  # 记录发送前的时间
         duplication_response = client.send_dup_del_command(duplicationDelCommand)
         if duplication_response['status'] == 'error':
-            print("Error during duplication delete:", duplication_response['message'])
+            print("Error during duplication delete:", duplication_response)
             final_status = "fail"
         else:
             print("Response from duplication delete:", duplication_response)
@@ -362,7 +362,7 @@ def get_instruction():
             key_del_response = client.send_key_del_command(keyDelCommand)
 
             if key_del_response['status'] == 'error':
-                print("Error during key delete:", key_del_response['message'])
+                print("Error during key delete:", key_del_response)
                 final_status = "fail"
             else:
                 print("Response from key delete:", key_del_response)
@@ -554,11 +554,16 @@ def get_instruction():
         print("Exception Occurs")
         print("------------------------------")
     except DeleteFailException as e:
+        print("\n------------------------------")
+        print("Delete Failure Exception Captured")
+        print("------------------------------")
         error_data = e.error_data
         infoID = error_data["data"]["content"]["infoID"]
         affairsID = error_data["data"]["content"]["affairsID"]
         with open(f'./err2/{infoID}-{affairsID}.json', 'w') as f:
             json.dump(error_data, f,indent=4)
+
+        print(f"error log is saved as ./err2/{infoID}-{affairsID}.json")
 
         if ifSendException:
             # 发送数据包到远程主机的代码 ...
@@ -567,11 +572,16 @@ def get_instruction():
         return jsonify({"error": str(e)}), 400
 
     except TimeoutException as e:
+        print("\n------------------------------")
+        print("Time Out Exception Captured")
+        print("------------------------------")
         error_data = e.error_data
         infoID = error_data["data"]["content"]["infoID"]
         affairsID = error_data["data"]["content"]["affairsID"]
         with open(f'./err1/{infoID}-{affairsID}.json', 'w') as f:
             json.dump(error_data, f,indent=4)
+
+        print(f"error log is saved as ./err1/{infoID}-{affairsID}.json")
 
         if ifSendException:
             # 发送数据包到远程主机的代码 ...

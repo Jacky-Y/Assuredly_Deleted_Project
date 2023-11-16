@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import json
 from util import *
 import base64
+import os
 app = Flask(__name__)
 
 
@@ -43,6 +44,7 @@ with open('decentralizedKeyStore.json', 'r') as file:
 with open('info_type.json', 'r') as file:
     info_type_data = json.load(file)
 
+
 def overwrite_key_file(target_files, alg_param, level):
     """
     模拟覆写密钥文件函数
@@ -53,12 +55,17 @@ def overwrite_key_file(target_files, alg_param, level):
     for _ in range(level):
         for file_path in target_files:
             try:
+                # 检查文件是否存在
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError(f"File {file_path} not found.")
+
                 # 直接覆写整个文件内容为 alg_param
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(alg_param)
-            except IOError as e:
+            
+            except (IOError, FileNotFoundError) as e:
                 print(f"Error processing file {file_path}: {e}")
-
+                raise
 
 
 def overwrite_file(target_files, granularity, alg_param, level):
@@ -69,33 +76,39 @@ def overwrite_file(target_files, granularity, alg_param, level):
     :param alg_param: 用于覆写的随机数
     :param level: 覆写的次数
     """
-    for _ in range(level):
-        for file_path in target_files:
+    for file_path in target_files:
+        for _ in range(level):
             try:
-                # 读取 JSON 文件
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                
-                # 根据 granularity 覆写特定字段或整个文件
+                # 检查文件是否存在
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError(f"File {file_path} not found.")
+
                 if granularity:
-                    if granularity in data:  # 检查字段是否存在
+                    # 读取 JSON 文件
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+
+                    # 如果指定了 granularity，则只覆写特定字段
+                    if granularity in data: 
                         data[granularity] = alg_param  # 覆写该字段
                     else:
                         print(f"Field '{granularity}' not found in {file_path}.")
-                        continue  # 如果字段不存在，跳过此次覆写并处理下一个文件
+                        continue
+
+                    # 保存修改后的 JSON 数据
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        json.dump(data, f, ensure_ascii=False, indent=4)
 
                 else:
                     # 如果没有指定 granularity，直接将文件内容覆写为 alg_param
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(alg_param)
-                        continue  # 跳过下面的 JSON 写入步骤，直接处理下一个文件
-
-                # 保存修改后的 JSON 数据
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(data, f, ensure_ascii=False, indent=4)
             
-            except (IOError, json.JSONDecodeError) as e:
+            except (IOError, json.JSONDecodeError, FileNotFoundError) as e:
                 print(f"Error processing file {file_path}: {e}")
+                raise
+
+
 
 @app.route('/getInfoType', methods=['POST'])
 def get_info_type():
