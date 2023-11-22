@@ -187,9 +187,12 @@ def get_operation_log():
         # 从 POST 请求中解析 JSON 数据
         data = request.get_json()
         infoID = data['data']['infoID']
-        
+        affairsID = data['data']['affairsID']
+
+        filename=infoID+"_"+affairsID
+
         # 构建文件路径
-        file_path = os.path.join('log', f"{infoID}.json")
+        file_path = os.path.join('log', f"{filename}.json")
         
         # 检查文件是否存在
         if os.path.exists(file_path):
@@ -519,7 +522,7 @@ def get_instruction():
             os.makedirs(log_dir)
 
         if infoID:
-            target_file_path = os.path.join(log_dir, f"{infoID}-{affairsID}.json")
+            target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
             with open(target_file_path, 'w', encoding='utf-8') as target_file:
                 json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
             print(f"File saved as {target_file_path}")
