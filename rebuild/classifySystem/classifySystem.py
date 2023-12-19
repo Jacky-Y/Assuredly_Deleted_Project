@@ -1,7 +1,27 @@
 from flask import Flask, request, jsonify
 import json
+import os
 
 app = Flask(__name__)
+
+def load_config():
+    # 构建 config.json 文件的路径
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(base_dir, 'deleteSystem', 'config.json')
+
+    try:
+        with open(config_path, 'r') as file:
+            config = json.load(file)
+            return config.get('classifySystem', {})
+    except FileNotFoundError:
+        print("配置文件未找到。请确保 config.json 文件在正确的位置。")
+        return {}
+    except json.JSONDecodeError:
+        print("配置文件格式错误。请确保它是有效的 JSON 格式。")
+        return {}
+    except Exception as e:
+        print(f"读取配置文件时发生错误：{e}")
+        return {}
 
 @app.route('/query', methods=['POST'])
 def query_info():
@@ -28,4 +48,8 @@ def query_info():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(port=6000)
+    config = load_config()
+    classify_system_ip = config.get('ip', '127.0.0.1')  # 默认 IP
+    classify_system_port = config.get('port', 6000)     # 默认端口
+
+    app.run(host=classify_system_ip, port=classify_system_port)

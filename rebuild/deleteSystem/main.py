@@ -33,7 +33,7 @@ class TimeoutException(Exception):
 
 def fetch_and_process_data(infoID):
     # 第一步：从 http://127.0.0.1:7000/getInfoType 获取 InfoType 列表
-    url_get_info_type = "http://127.0.0.1:7000/getInfoType"
+    url_get_info_type = f"http://127.0.0.1:{app.config['store_system_port']}/getInfoType"
     headers_get_info_type = {
         "Content-Type": "application/json"
     }
@@ -51,7 +51,9 @@ def fetch_and_process_data(infoID):
     info_types = response_data_get_info_type.get('InfoTypes', [])
 
     # 第二步：使用 InfoType 列表请求 http://127.0.0.1:6000/query 获取结果
-    url_query = "http://127.0.0.1:6000/query"
+    # url_query = "http://127.0.0.1:6000/query"
+    url_query = f"http://{app.config['classify_system_ip']}:{app.config['classify_system_port']}/query"
+
     headers_query = {
         "Content-Type": "application/json"
     }
@@ -120,6 +122,26 @@ def load_config(system_id):
         print(f"读取配置文件时发生错误：{e}")
 
     return None
+
+def load_system_configs():
+    try:
+        with open('config.json', 'r') as file:
+            config = json.load(file)
+
+            # 提取 classifySystem 和 storeSystem 的配置
+            classify_system_config = config.get("classifySystem")
+            store_system_config = config.get("storeSystem")
+
+            return classify_system_config, store_system_config
+
+    except FileNotFoundError:
+        print("配置文件未找到。请确保 config.json 文件在正确的位置。")
+    except json.JSONDecodeError:
+        print("配置文件格式错误。请确保它是有效的 JSON 格式。")
+    except Exception as e:
+        print(f"读取配置文件时发生错误：{e}")
+
+    return None, None
 
 
 def send_deletion_message(rootNode,system_id, final_status):
@@ -272,7 +294,8 @@ def get_instruction():
         print("Duplication and Key Information")
         print("------------------------------")
 
-        client = StorageSystemClient("http://127.0.0.1:7000")
+        # client = StorageSystemClient("http://127.0.0.1:7000")
+        client = StorageSystemClient(f"http://127.0.0.1:{app.config['store_system_port']}")
         infoID_to_query = infoID  # 替换为需要查询的实际infoID值
 
         # Step 1: 查询infoID的存储状态
@@ -602,11 +625,26 @@ def get_instruction():
 if __name__ == "__main__":
     args = parse_arguments()
     node_config = load_config(args.system_id)
+    classify_system_config, store_system_config = load_system_configs()
 
     if node_config:
-        app.config['SYSTEM_ID'] = args.system_id  # 存储 system_id 到 app.config
+        app.config['SYSTEM_ID'] = args.system_id  # Store system_id in app.config
         app.config['HOST'] = node_config['ip']
         app.config['PORT'] = node_config['port']
+
+        # Store classifySystem configuration in app.config
+        if classify_system_config:
+            app.config['classify_system_ip'] = classify_system_config['ip']
+            app.config['classify_system_port'] = classify_system_config['port']
+        else:
+            print("No configuration found for classifySystem")
+
+        # Store storeSystem configuration in app.config
+        if store_system_config:
+            app.config['store_system_port'] = store_system_config['port']
+        else:
+            print("No configuration found for storeSystem")
+
         app.run(host=node_config['ip'], port=node_config['port'])
     else:
         print(f"No configuration found for node {args.system_id}")

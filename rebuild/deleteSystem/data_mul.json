@@ -8,7 +8,7 @@
         "infoID": "0c1d2e3f4g5h",
         "deleteMethod": "overwrittenDelete",
         "deleteGranularity": "Name",
-        "deleteNotifyTree":"{\"b1000\": {\"children\": [{\"b1001\": {\"children\": [\"b1002\"]}}, {\"b1003\": {\"children\": [\"b1004\"]}}]}}"
+        "deleteNotifyTree":"{\"b1000\": {\"children\": [\"b1001\"]}}"
     },
     "dataHash": "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
 }
