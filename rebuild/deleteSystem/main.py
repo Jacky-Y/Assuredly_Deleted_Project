@@ -11,6 +11,8 @@ from flask import current_app
 from util import NotificationTreeUtils
 import threading
 import time
+from service.classify_client import fetch_and_process_data
+from service.store_client import query_data_and_key_locations
 
 
 # 确定性删除系统
@@ -71,57 +73,6 @@ class TimeoutException(Exception):
     def __init__(self, message, error_data):
         super().__init__(message)
         self.error_data = error_data
-
-# 函数：fetch_and_process_data
-# 功能：从特定URL获取并处理数据
-# 输入：
-#    infoID: str - 信息的唯一标识符
-# 输出：
-#    tuple - 包含排序后的数据和最高信息级别
-def fetch_and_process_data(infoID):
-    # 第一步：从 http://127.0.0.1:7000/getInfoType 获取 InfoType 列表
-    url_get_info_type = f"http://127.0.0.1:{app.config['store_system_port']}/getInfoType"
-    headers_get_info_type = {
-        "Content-Type": "application/json"
-    }
-    data_get_info_type = {
-        "infoID": infoID
-    }
-
-    response_get_info_type = requests.post(url_get_info_type, headers=headers_get_info_type, json=data_get_info_type)
-    response_data_get_info_type = response_get_info_type.json()
-
-    # 检查返回数据中是否包含 error，如果包含则抛出异常
-    if 'error' in response_data_get_info_type:
-        raise ValueError(response_data_get_info_type['error'])
-
-    info_types = response_data_get_info_type.get('InfoTypes', [])
-
-    # 第二步：使用 InfoType 列表请求 http://127.0.0.1:6000/query 获取结果
-    # url_query = "http://127.0.0.1:6000/query"
-    url_query = f"http://{app.config['classify_system_ip']}:{app.config['classify_system_port']}/query"
-
-    headers_query = {
-        "Content-Type": "application/json"
-    }
-    data_query = {
-        "InfoTypes": info_types
-    }
-
-    response_query = requests.post(url_query, headers=headers_query, json=data_query)
-    response_data = response_query.json()
-
-    # 检查返回的数据是否包含错误。如果包含，则抛出异常
-    if 'error' in response_data:
-        raise ValueError(response_data['error'])
-
-    # 对返回的数据基于 'InfoLevel' 进行排序
-    sorted_data = sorted(response_data, key=lambda x: x['InfoLevel'], reverse=True)
-
-    # 获取 InfoLevel 最高的数据
-    max_level = sorted_data[0]['InfoLevel']
-
-    return sorted_data, max_level
 
 
 # 函数：generate_delete_level
@@ -382,7 +333,7 @@ def get_instruction():
         print("Classification Information")
         print("------------------------------")
 
-        sorted_data, max_level = fetch_and_process_data(infoID)
+        sorted_data, max_level = fetch_and_process_data(infoID,app.config['store_system_port'],app.config['classify_system_ip'],app.config['classify_system_port'])
 
         print(f"Max Sensitive Level: {max_level}")
         print(f"Classified Information: {sorted_data}")
@@ -394,54 +345,15 @@ def get_instruction():
         print("Duplication and Key Information")
         print("------------------------------")
 
-        # client = StorageSystemClient("http://127.0.0.1:7000")
-        client = StorageSystemClient(f"http://127.0.0.1:{app.config['store_system_port']}")
-        infoID_to_query = infoID  # 替换为需要查询的实际infoID值
-
-        # Step 1: 查询infoID的存储状态
-        status = client.get_status(infoID_to_query)
-        print(f"Storage status for infoID {infoID_to_query}: {status}")
-
-        # Step 2: 查询infoID的副本位置信息
-        locations = client.get_duplication_locations(infoID_to_query)
-        if locations:
-            print(f"Locations for infoID {infoID_to_query}: {locations}")
-        else:
-            print(f"No duplication locations found for infoID {infoID_to_query}")
-
-        # Step 3: 判断是否为加密状态
-        key_locations=[]
-
-        if status == "Encrypted":
-            # Step 4: 查询密钥存储方式
-            key_storage_method = client.get_key_storage_method(infoID_to_query)
-            
-            if key_storage_method:
-                # Step 5: 根据密钥存储方式获取密钥位置
-                if key_storage_method == "Centralized":
-                    key_locations = client.get_centralized_key(infoID_to_query)
-                elif key_storage_method == "Decentralized":
-                    key_locations = client.get_decentralized_key(infoID_to_query)
-                else:
-                    print(f"Unknown key storage method: {key_storage_method}")
-                    key_locations = None
-
-                if key_locations:
-                    print(f"Key locations for infoID {infoID_to_query}: {key_locations}")
-                else:
-                    print("Failed to retrieve key locations.")
-            else:
-                print("Failed to retrieve key storage method.")
-        else:
-            print(f"infoID {infoID_to_query} is not encrypted.")
-
-
+        locations,key_locations=query_data_and_key_locations(infoID,app.config['store_system_port'])
 
 
 #########################删除命令生成#########################
         print("\n------------------------------")
         print("Delete Commands")
         print("------------------------------")
+
+        client = StorageSystemClient(f"http://127.0.0.1:{app.config['store_system_port']}")
 
         deleteLevel=generate_delete_level(max_level)
 
