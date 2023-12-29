@@ -8,6 +8,18 @@ from datetime import datetime
 
 import struct
 
+# 函数：create_packet_header_with_json
+# 功能：创建包含JSON字符串的数据包头
+# 输入：
+#    version: str - 数据包的版本号
+#    main_command: str - 主命令标识
+#    sub_command: str - 子命令标识
+#    message_version: str - 消息版本号
+#    encrypt_mode: str - 加密模式标识
+#    auth_mode: str - 认证模式标识
+#    json_str: str - 要包含在数据包中的JSON字符串
+# 输出：
+#    bytes - 构建好的数据包头部的字节序列
 def create_packet_header_with_json(version, main_command, sub_command, message_version, encrypt_mode, auth_mode, json_str):
     reserved = "0x0000"  # 保留字段
 
@@ -38,7 +50,18 @@ def create_packet_header_with_json(version, main_command, sub_command, message_v
     return packet_header
 
 
-
+# 函数：create_packet
+# 功能：创建包含JSON数据的完整数据包
+# 输入：
+#    version: str - 数据包版本号
+#    main_command: str - 主命令标识
+#    sub_command: str - 子命令标识
+#    encrypt_mode: str - 加密模式标识
+#    auth_mode: str - 认证模式标识
+#    message_id: str - 消息的唯一标识
+#    json_data: dict - 要发送的JSON数据
+# 输出：
+#    bytes - 构造的完整数据包
 
 def create_packet(version, main_command, sub_command, encrypt_mode, auth_mode, message_id, json_data):
     # 将JSON对象转换为JSON字符串
@@ -58,15 +81,16 @@ def create_packet(version, main_command, sub_command, encrypt_mode, auth_mode, m
     return packet
 
 
-
+# 函数：send_packet_tcp
+# 功能：通过TCP发送数据包并接收服务器响应
+# 输入：
+#    host: str - 目标主机地址
+#    port: int - 目标端口号
+#    packet: bytes - 要发送的数据包
+# 输出：
+#    无直接输出，但会打印服务器响应
 def send_packet_tcp(host, port, packet):
-    """
-    发送TCP数据包,并接收并打印服务器的响应
 
-    :param host: 目标主机名
-    :param port: 目标端口
-    :param packet: 要发送的数据包
-    """
     # 创建一个socket对象
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -85,6 +109,16 @@ def send_packet_tcp(host, port, packet):
     # 关闭连接
     s.close()
 
+# 函数：client_interaction
+# 功能：与两个服务器进行交互，发送请求并处理响应
+# 输入：
+#    remote_ip_1, remote_port_1: str, int - 第一个服务器的IP地址和端口号
+#    remote_ip_2, remote_port_2: str, int - 第二个服务器的IP地址和端口号
+#    initial_content, second_content: dict - 发送到第一和第二服务器的数据
+#    initial_main_cmd, second_main_cmd: str - 第一和第二服务器的主命令
+#    initial_msg_version, second_msg_version: str - 第一和第二服务器的消息版本号
+# 输出：
+#    无直接输出，但会处理和打印服务器响应
 
 def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, initial_content, initial_main_cmd, initial_msg_version, second_content, second_main_cmd, second_msg_version):
     try:
@@ -138,6 +172,12 @@ def client_interaction(remote_ip_1, remote_port_1, remote_ip_2, remote_port_2, i
     except Exception as e:
         print(f"Unexpected error occurred: {e}")
 
+# 函数：extract_from_packet
+# 功能：从接收到的数据包中提取JSON内容
+# 输入：
+#    data: bytes - 接收到的数据包
+# 输出：
+#    dict - 解析出的JSON数据
 
 def extract_from_packet(data):
     """

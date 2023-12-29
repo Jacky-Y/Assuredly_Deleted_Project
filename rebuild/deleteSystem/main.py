@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import Flask, request, jsonify
 from StorageSystemClient import StorageSystemClient
 import requests
@@ -11,6 +13,36 @@ import threading
 import time
 
 
+# 确定性删除系统
+# 1.2.1系统整体概述
+# 确定性删除系统从删除指令通知与确认系统获得删除指令，并对指令进行解析，从而获取删除粒度、删除方法、全局性标识等字段，然后确定性删除系统将根据全局性标识从存储系统获得该个人信息包含的字段类型，并向分类分级系统查询这些字段类型对应的分类等级，确定性删除系统接下来将向存储系统查询该个人信息的存储类型、存储位置、密钥位置，并综合分类等级、存储类型、存储位置、密钥位置生成具体删除命令，并将删除命令发送到存储系统，删除系统执行删除之后，将向确定性删除系统汇报删除结果。
+# 1.2.2 系统功能介绍
+# 1.删除指令解析功能
+# 从删除指令通知与确认系统获得删除指令之后，对删除指令按照通信协议进行解析，若各字段数据类型正确，则将正常获得删除粒度、删除方法等信息。
+# 2.多副本确定功能已完成
+# 确定性删除系统通过信息标识符向存储系统查询个人信息副本的存储位置，存储系统将个人信息副本位置返回
+# 3.指令分解与下发功能已完成
+# 确定性删除系统根据得到的个人信息存储位置、个人信息存储状态、密钥存储位置、个人信息字段类型分级等信息，生成删除命令，并将删除命令下发给存储系统
+# 4.指令理解与方法选择功能已完成
+# 确定性删除系统通过信息标识符向存储系统查询个人信息的字段类型，然后根据个人信息的字段类型向分类分级系统查询分级信息，并根据分级信息确定删除覆写次数
+# 5.操作行为自存证功能已完成
+# 确定性删除系统完成删除操作之后，将完成删除的过程中产生的各个字段保存为删除操作日志
+# 6.证据提取功能已完成
+# 确定性删除系统开启监听，当收到删除效果评测系统的日志提取请求之后，将提取相应的删除操作日志并发送给删除效果评测系统
+# 7.密钥定位功能已完成
+# 确定性删除系统通过信息标识符向存储系统查询个人信息的储存类型，如果是密文存储，则继续向存储系统查询密钥的存储位置，存储系统将密钥存储位置返回
+# 8.操作执行功能已完成
+# 确定性删除系统向存储系统发送删除命令，存储系统解析并执行删除命令，并将执行后的删除结果返回给确定性删除系统
+# 9.	密钥删除功能已完成
+# 确定性删除系统向存储系统发送密钥删除命令，存储系统解析并执行密钥删除命令，并将执行后的密钥删除结果返回给确定性删除系统
+# 10.密钥分量确定与删除功能已完成
+# 确定性删除系统通过信息标识符向存储系统查询个人信息的储存类型，如果是密文存储并且密钥是通过分散存储的形式进行存储，则向存储系统查询所有密钥分量的位置，存储系统将所有密钥分片的存储位置返回
+# 11.操作反馈功能已完成
+# 进行删除指令解析之后，确定性删除系统将得到发起删除的源域信息，如果当前域为源域，则在删除操作执行之后完之后等待其他域的删除结果，如果当前域不为源域，则在删除操作执行之后向源域报告删除结果
+# 12.操作结果可视化功能未完成
+# 源域的确定性删除系统在完成收集所有来自其他域的确定性删除系统的删除结果之后，通过可视化的方式展示最终的删除结果，即是否所有域都按要求完成了删除
+
+
 #定义全局变量
 node_statuses={}
 status_updated = False
@@ -20,17 +52,32 @@ preset_duration_seconds=10
 
 app = Flask(__name__)
 
-
+# 类：DeleteFailException
+# 功能：表示删除操作失败的异常类
+# 输入：
+#    message: str - 异常的描述信息
+#    error_data: dict - 异常相关的附加数据
 class DeleteFailException(Exception):
     def __init__(self, message, error_data):
         super().__init__(message)
         self.error_data = error_data
 
+# 类：TimeoutException
+# 功能：表示操作超时的异常类
+# 输入：
+#    message: str - 异常的描述信息
+#    error_data: dict - 异常相关的附加数据
 class TimeoutException(Exception):
     def __init__(self, message, error_data):
         super().__init__(message)
         self.error_data = error_data
 
+# 函数：fetch_and_process_data
+# 功能：从特定URL获取并处理数据
+# 输入：
+#    infoID: str - 信息的唯一标识符
+# 输出：
+#    tuple - 包含排序后的数据和最高信息级别
 def fetch_and_process_data(infoID):
     # 第一步：从 http://127.0.0.1:7000/getInfoType 获取 InfoType 列表
     url_get_info_type = f"http://127.0.0.1:{app.config['store_system_port']}/getInfoType"
@@ -77,6 +124,12 @@ def fetch_and_process_data(infoID):
     return sorted_data, max_level
 
 
+# 函数：generate_delete_level
+# 功能：根据最高信息级别生成删除级别
+# 输入：
+#    max_level: int - 最高信息级别
+# 输出：
+#    int - 计算出的删除级别
 def generate_delete_level(max_level):
     if max_level == 5:
         return 7
@@ -87,6 +140,12 @@ def generate_delete_level(max_level):
     else:
         return 1
 
+# 函数：generate_delete_command_str
+# 功能：根据删除命令的JSON格式生成字符串形式的删除命令
+# 输入：
+#    command_json: dict - 包含删除命令信息的JSON对象
+# 输出：
+#    str - 格式化的删除命令字符串
 def generate_delete_command_str(command_json):
     target = command_json.get("target", "")
     deleteGranularity = command_json.get("deleteGranularity", None)
@@ -102,11 +161,23 @@ def generate_delete_command_str(command_json):
     return command_str
 
 
+# 函数：parse_arguments
+# 功能：解析命令行参数
+# 输入：
+#    无
+# 输出：
+#    argparse.Namespace - 解析后的命令行参数
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Flask Node Startup Configuration')
     parser.add_argument('system_id', help='Name of the node to start')
     return parser.parse_args()
 
+# 函数：load_config
+# 功能：加载指定系统标识的配置信息
+# 输入：
+#    system_id: str - 系统标识符
+# 输出：
+#    dict 或 None - 成功时返回配置信息字典，失败时返回 None
 def load_config(system_id):
     try:
         with open('config.json', 'r') as file:
@@ -123,6 +194,12 @@ def load_config(system_id):
 
     return None
 
+# 函数：load_system_configs
+# 功能：加载系统的配置信息
+# 输入：
+#    无
+# 输出：
+#    tuple - 包含分类系统和存储系统配置的元组，失败时返回 (None, None)
 def load_system_configs():
     try:
         with open('config.json', 'r') as file:
@@ -143,7 +220,14 @@ def load_system_configs():
 
     return None, None
 
-
+# 函数：send_deletion_message
+# 功能：向根节点发送删除消息
+# 输入：
+#    rootNode: str - 根节点的系统标识符
+#    system_id: str - 当前系统的标识符
+#    final_status: str - 最终状态信息
+# 输出：
+#    无直接输出，但会向根节点发送 POST 请求
 def send_deletion_message(rootNode,system_id, final_status):
     # 从配置文件中加载根节点信息
     root_node_config = load_config(rootNode)
@@ -165,6 +249,12 @@ def send_deletion_message(rootNode,system_id, final_status):
     except requests.RequestException as e:
         print(f"Error sending message to root node: {e}")
 
+# 函数：wait_for_results
+# 功能：等待并显示删除结果
+# 输入：
+#    timeout: int - 等待结果的超时时间（秒）
+# 输出：
+#    无直接输出，但会打印每个节点的状态和超时后的结果
 def wait_for_results(timeout):
     print(f"开始等待来自{list(node_statuses.keys())}的删除结果")
     global status_updated
@@ -187,7 +277,12 @@ def wait_for_results(timeout):
             print(f"节点 {node} 未成功报告删除结果。")
 
 
-
+# 路由：/gatherResult
+# 功能：接收节点的删除结果并更新状态
+# 输入：
+#    无（使用 Flask 的 request.json 获取输入数据）
+# 输出：
+#    JSON - 返回结果接收确认或错误信息
 @app.route('/gatherResult', methods=['POST'])
 def gather_result():
     global status_updated
@@ -202,7 +297,12 @@ def gather_result():
     else:
         return jsonify({"error": "Invalid data received"}), 400
 
-
+# 路由：/getOperationLog
+# 功能：根据请求数据获取操作日志
+# 输入：
+#    无（使用 Flask 的 request.get_json() 获取输入数据）
+# 输出：
+#    JSON - 返回操作日志或错误信息
 @app.route('/getOperationLog', methods=['POST'])
 def get_operation_log():
     try:
@@ -382,7 +482,6 @@ def get_instruction():
             final_status = "fail"
         else:
             print("Response from duplication delete:", duplication_response)
-
         # 如果keyDelCommand不为空，则发送
         if keyDelCommand["target"]:
             key_del_response = client.send_key_del_command(keyDelCommand)
@@ -532,7 +631,7 @@ def get_instruction():
         del operation_log["data"]["others"]
         operation_log["data"]["affairsID"]=affairsID
         operation_log["data"]["userID"]=userID
-        operation_log["data"]["classfication_info"]=sorted_data
+        operation_log["data"]["classification_info"]=sorted_data
         operation_log["data"]["deleteMethod"]=deleteMethod
         operation_log["data"]["deleteGranularity"]=deleteGranularity
         if key_locations:
