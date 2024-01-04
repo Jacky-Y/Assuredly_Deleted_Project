@@ -13,6 +13,12 @@ import threading
 import time
 from service.classify_client import fetch_and_process_data
 from service.store_client import query_data_and_key_locations
+from service.command_gen import generate_delete_commands
+from service.command_deliver import deliver_delete_commands
+from service.log_save import save_operation_log
+
+from service.command_deliver import TimeoutException
+from service.command_deliver import DeleteFailException
 
 
 # 确定性删除系统
@@ -50,29 +56,10 @@ node_statuses={}
 status_updated = False
 ifSendException = False
 deletePerformer = "default Performer"
-preset_duration_seconds=10
+preset_duration_seconds=1
 
 app = Flask(__name__)
 
-# 类：DeleteFailException
-# 功能：表示删除操作失败的异常类
-# 输入：
-#    message: str - 异常的描述信息
-#    error_data: dict - 异常相关的附加数据
-class DeleteFailException(Exception):
-    def __init__(self, message, error_data):
-        super().__init__(message)
-        self.error_data = error_data
-
-# 类：TimeoutException
-# 功能：表示操作超时的异常类
-# 输入：
-#    message: str - 异常的描述信息
-#    error_data: dict - 异常相关的附加数据
-class TimeoutException(Exception):
-    def __init__(self, message, error_data):
-        super().__init__(message)
-        self.error_data = error_data
 
 
 # 函数：generate_delete_level
@@ -90,6 +77,7 @@ def generate_delete_level(max_level):
         return 3
     else:
         return 1
+
 
 # 函数：generate_delete_command_str
 # 功能：根据删除命令的JSON格式生成字符串形式的删除命令
@@ -110,7 +98,6 @@ def generate_delete_command_str(command_json):
         command_str = f"delete {target} using deleteAlg={deleteAlg} with deleteAlgParam={deleteAlgParam} at deleteLevel= {deleteLevel}"
     
     return command_str
-
 
 # 函数：parse_arguments
 # 功能：解析命令行参数
@@ -346,6 +333,8 @@ def get_instruction():
         print("------------------------------")
 
         locations,key_locations=query_data_and_key_locations(infoID,app.config['store_system_port'])
+        print(f"Locations for infoID {infoID}: {locations}")
+        print(f"Key locations for infoID {infoID}: {key_locations}")
 
 
 #########################删除命令生成#########################
@@ -353,27 +342,11 @@ def get_instruction():
         print("Delete Commands")
         print("------------------------------")
 
-        client = StorageSystemClient(f"http://127.0.0.1:{app.config['store_system_port']}")
+        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod)
 
-        deleteLevel=generate_delete_level(max_level)
-
-        deleteAlgParam=infoID
-
-        duplicationDelCommand={
-        "target": locations,
-        "deleteGranularity": deleteGranularity,
-        "deleteAlg": deleteMethod,
-        "deleteAlgParam": deleteAlgParam,
-        "deleteLevel": deleteLevel
-        }
-        keyDelCommand={
-        "target": key_locations,
-        "deleteAlg": deleteMethod,
-        "deleteAlgParam": deleteAlgParam,
-        "deleteLevel": deleteLevel
-        }
         duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
         keyDelCommand_str=generate_delete_command_str(keyDelCommand)
+
         print(f"Duplication Delete Command: {duplicationDelCommand_str}")
         print(f"Key Delete Command: {keyDelCommand_str}")
 
@@ -386,73 +359,7 @@ def get_instruction():
         # 初始化最终状态为成功
         final_status = "success"
 
-        # 发送duplicationDelCommand
-        send_time = datetime.now()  # 记录发送前的时间
-        duplication_response = client.send_dup_del_command(duplicationDelCommand)
-        if duplication_response['status'] == 'error':
-            print("Error during duplication delete:", duplication_response)
-            final_status = "fail"
-        else:
-            print("Response from duplication delete:", duplication_response)
-        # 如果keyDelCommand不为空，则发送
-        if keyDelCommand["target"]:
-            key_del_response = client.send_key_del_command(keyDelCommand)
-
-            if key_del_response['status'] == 'error':
-                print("Error during key delete:", key_del_response)
-                final_status = "fail"
-            else:
-                print("Response from key delete:", key_del_response)
-        else:
-            print("Not encrypted, no need to delete key")
-
-        deletePerformTime=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # 引起异常的逻辑
-        # 检查是否删除成功
-        if final_status == "fail":
-            error_data = {
-                "data": {
-                    "DataType": 0x4102,
-                    "content": {
-                        "infoID": infoID,
-                        "affairsID": affairsID,
-                        "deleteInstruction": delete_instruction_str,
-                        "deletePerformer": deletePerformer,
-                        "deletePerformTime": deletePerformTime,
-                        "deleteControlSet": duplicationDelCommand_str+" and "+keyDelCommand_str,
-                        "deleteDupResult": f"未成功对{infoID}副本完成删除"
-                    }
-                }
-            }
-            print("Failure, delete failed")
-            raise DeleteFailException("Delete operation failed.", error_data)
-
-        # 检查是否超过预设时间
-        if (datetime.now() - send_time).total_seconds() > preset_duration_seconds:
-            error_data = {
-                "data": {
-                    "DataType": 0x4102,
-                    "content": {
-                        "infoID": infoID,
-                        "affairsID": affairsID,
-                        "deleteInstruction": delete_instruction_str,
-                        "deletePerformer": deletePerformer,
-                        "deletePerformTime": deletePerformTime,
-                        "timeout": (datetime.now() - send_time).total_seconds()
-                    }
-                }
-            }
-            print("Time out, delete failed")
-            raise TimeoutException("Operation took longer than the preset time.", error_data)
-
-
-        # 打印最终的结果
-        if final_status == "success":
-            print("Final result: Success!")
-        else:
-            print("Final result: Failed!")
-        
+        final_status,deletePerformTime=deliver_delete_commands(app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds)
         
 
 
@@ -485,10 +392,9 @@ def get_instruction():
         deleteAlg_num=1
 
 
-
-
-
         # 定义其他字段
+        deleteLevel=generate_delete_level(max_level)
+        deleteAlgParam=infoID
         dataHash = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
         datasign = "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
 
@@ -537,31 +443,7 @@ def get_instruction():
         print("Operation Log")
         print("------------------------------")
 
-        #添加操作日志的特有的字段
-        operation_log=fullEvidence
-
-        del operation_log["data"]["others"]
-        operation_log["data"]["affairsID"]=affairsID
-        operation_log["data"]["userID"]=userID
-        operation_log["data"]["classification_info"]=sorted_data
-        operation_log["data"]["deleteMethod"]=deleteMethod
-        operation_log["data"]["deleteGranularity"]=deleteGranularity
-        if key_locations:
-            operation_log["data"]["deleteKeyinfoID"]=key_locations
-        else:
-            operation_log["data"]["deleteKeyinfoID"]=''
-        # 确保log文件夹存在，不存在则创建
-        log_dir = "log"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-
-        if infoID:
-            target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
-            with open(target_file_path, 'w', encoding='utf-8') as target_file:
-                json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
-            print(f"File saved as {target_file_path}")
-        else:
-            print("infoID not found in operation_log dictionary")
+        save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID)
 
 #########################删除结果汇总#########################
         print("\n------------------------------")
