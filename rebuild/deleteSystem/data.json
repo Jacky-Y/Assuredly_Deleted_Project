@@ -7,7 +7,7 @@
         "userID": "u100000003",
         "infoID": "0c1d2e3f4g5h",
         "deleteMethod": "overwrittenDelete",
-        "deleteGranularity": "Name",
+        "deleteGranularity": "",
         "deleteNotifyTree":"{\"b1000\": {\"children\": []}}"
     },
     "dataHash": "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"

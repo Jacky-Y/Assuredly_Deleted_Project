@@ -3,6 +3,11 @@ import json
 from util import *
 import base64
 import os
+
+from overwirter_class import JsonOverwriter
+from overwirter_class import TextOverwriter
+
+
 app = Flask(__name__)
 
 
@@ -210,7 +215,14 @@ def duplication_del():
 
     # 执行覆写操作
     try:
-        overwrite_file(target_files, delete_granularity, base64_vrf_output_string, delete_level)
+        # overwrite_file(target_files, delete_granularity, base64_vrf_output_string, delete_level)
+
+        # 创建一个 JsonOverwriter 实例
+        jsonoverwriter = JsonOverwriter(granularity=delete_granularity, alg_param=base64_vrf_output_string, level=delete_level)
+
+        # 调用 overwrite_file 方法
+        jsonoverwriter.overwrite_file(target_files)
+
         return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -241,7 +253,14 @@ def key_del():
 
     # 执行覆写操作
     try:
-        overwrite_key_file(target_files, base64_vrf_output_string, delete_level)
+        # overwrite_key_file(target_files, base64_vrf_output_string, delete_level)
+
+        # 创建一个 JsonOverwriter 实例
+        textoverwriter = TextOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+        # 调用 overwrite_file 方法
+        textoverwriter.overwrite_file(target_files)
+
         return jsonify({"status": "success", "message": "Key overwrite operation completed successfully."})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
