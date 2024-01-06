@@ -1,7 +1,7 @@
 import os
 import json
 
-def save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID):
+def save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot):
     """
     保存操作日志。
     此函数用于根据提供的参数创建和保存操作日志文件。
@@ -58,6 +58,11 @@ def save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMetho
     # infoID: 代表信息的唯一标识符，用于在日志文件中标记特定的操作或事件
     if not isinstance(infoID, str):
         raise TypeError("infoID must be a string")
+    
+    # 检查 isRoot 参数是否为字符串类型 
+    # isRoot: 代表当前是否为源域，用于在日志文件中标记是否为源域的信息
+    if not isinstance(isRoot, bool):
+        raise TypeError("isRoot must be a bool")
 
 
     # 添加操作日志的特有的字段
@@ -66,6 +71,9 @@ def save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMetho
     # 修改 operation_log 字典中的部分字段
     # 移除 'others' 字段
     operation_log["data"].pop("others", None)
+
+    #添加isRoot字段
+    operation_log['isRoot']=isRoot
 
     # 更新其他字段
     operation_log["data"]["affairsID"] = affairsID

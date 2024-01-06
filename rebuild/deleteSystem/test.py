@@ -1,7 +1,8 @@
 import binascii
 
 #导入国密算法sm4包
-from gmssl import sm4,sm3
+from utils import sm3
+from utils import sm4
 
 def sm3_hash(message:bytes):
     """

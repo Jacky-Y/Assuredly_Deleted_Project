@@ -407,29 +407,42 @@ def get_instruction():
             "msgVersion": msgVersion,
             "submittime": submittime,
             "data": {
+                "globalID":infoID,
+                "status":"已删除",
                 "title": title,
                 "abstract": abstract,
                 "keyWords": keyWords,
                 "category": category,
-                "others": others,
-                "infoID": infoID,
                 "infoType": infoType,
                 "deletePerformer": deletePerformer,
                 "deletePerformTime": deletePerformTime,
-                "deleteDupinfoID": deleteDupinfoID,
+                "deleteDupInfoID": deleteDupinfoID,
                 "deleteInstruction": {
-                    "affairsID": affairsID,
-                    "userID": userID,
-                    "infoID": infoID,
-                    "notifyTime": notifyTime,
-                    "deleteMethod": deleteMethod,
-                    "deleteGranularity": deleteGranularity
+                        "userID": userID,
+                        "infoID":infoID,
+                        "deleteMethod": deleteMethod,
+                        "deleteGranularity":deleteGranularity
                 },
                 "deleteControlSet": deleteControlSet,
                 "deleteAlg": deleteAlg_num,
                 "deleteAlgParam": deleteAlgParam,
-                "deleteLevel": deleteLevel
-            },
+                "deleteLevel": deleteLevel,
+                "pathtree": {
+                    "parent":{
+                        "systemID":1,
+                        "globalID":"时间戳+随机数+产生信息系统名字"
+                    },
+                    "self":{
+                        "systemID":1,
+                        "globalID":"时间戳+随机数+产生信息系统名字",
+                        "evidenceID":"00032dab40af0c56d2fa332a4924d150"
+                    },
+                    "child":{
+                        "systemID":0,
+                        "globalID":""
+                    }
+                }},
+
             "dataHash": dataHash,
             "datasign": datasign
         }
@@ -443,7 +456,7 @@ def get_instruction():
         print("Operation Log")
         print("------------------------------")
 
-        save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID)
+        save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
 
 #########################删除结果汇总#########################
         print("\n------------------------------")
