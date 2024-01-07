@@ -20,6 +20,8 @@ from service.log_save import save_operation_log
 from service.command_deliver import TimeoutException
 from service.command_deliver import DeleteFailException
 
+from models.operation_log_model import OperationLogModel
+
 
 # 确定性删除系统
 # 1.2.1系统整体概述
@@ -246,25 +248,61 @@ def get_operation_log():
     try:
         # 从 POST 请求中解析 JSON 数据
         data = request.get_json()
-        infoID = data['data']['infoID']
-        affairsID = data['data']['affairsID']
 
-        filename=infoID+"_"+affairsID
+        print(data)
 
-        # 构建文件路径
-        file_path = os.path.join('log', f"{filename}.json")
+        # 解析基本字段
+        system_id = data.get('systemID')
+        system_ip = data.get('systemIP')
+        main_cmd = data.get('mainCMD')
+        sub_cmd = data.get('subCMD')
+        evidence_id = data.get('evidenceID')
+        msg_version = data.get('msgVersion')
+        submittime = data.get('submittime')
+        data_hash = data.get('dataHash')
+        datasign = data.get('datasign')
+
+        #对infoID的解析
+        infoID = data.get('data', {}).get('infoID', '')
+
+        # 特别处理 'data' 字典内的 'time' 字段
+        time_str = data.get('data', {}).get('time', '')
+        start_time, end_time = None, None
+        if 'to' in time_str:
+            start_time_str, end_time_str = time_str.split(' to ')
+            start_time = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
+            end_time = datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
+
+        print(start_time, end_time)
+
+        db_model = OperationLogModel("127.0.0.1", "root", "123456", "assured_deletion")
+
+        if not infoID:
+            result_json = db_model.get_records_by_time_period(start_time, end_time)
+
+        if not time_str:
+            result_json = db_model.get_records_by_infoID(infoID)
+
+        op_log=db_model.format_log(result_json)
+
+        return jsonify(op_log)
+
+
+        # filename=infoID+"_"+affairsID
+
+        # # 构建文件路径
+        # file_path = os.path.join('log', f"{filename}.json")
         
-        # 检查文件是否存在
-        if os.path.exists(file_path):
-            with open(file_path, 'r') as file:
-                log_data = json.load(file)
-                return jsonify(log_data)
-        else:
-            return jsonify({"error": "Log not found"}), 404
+        # # 检查文件是否存在
+        # if os.path.exists(file_path):
+        #     with open(file_path, 'r') as file:
+        #         log_data = json.load(file)
+        #         return jsonify(log_data)
+        # else:
+        #     return jsonify({"error": "Log not found"}), 404
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
 
 
 
@@ -416,7 +454,7 @@ def get_instruction():
                 "infoType": infoType,
                 "deletePerformer": deletePerformer,
                 "deletePerformTime": deletePerformTime,
-                "deleteDupInfoID": deleteDupinfoID,
+                "deleteDupinfoID": deleteDupinfoID,
                 "deleteInstruction": {
                         "userID": userID,
                         "infoID":infoID,
@@ -456,7 +494,43 @@ def get_instruction():
         print("Operation Log")
         print("------------------------------")
 
-        save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
+        fullEvidence['data']['classification_info']=sorted_data
+        fullEvidence['data']['deleteKeyinfoID']=key_locations
+        fullEvidence['data']['infoID']=fullEvidence['data']['globalID']
+        fullEvidence['data']['affairsID']=affairsID
+        fullEvidence['data']['userID']=userID
+        fullEvidence['data']['deleteMethod']=deleteMethod
+        fullEvidence['data']['deleteGranularity']=deleteGranularity
+        fullEvidence['isRoot']=isRoot
+        del fullEvidence['data']['globalID']
+
+
+
+        print(fullEvidence)
+
+        # 确保log文件夹存在，不存在则创建
+        log_dir = "log"
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+
+        # 检查 infoID 是否存在
+        if infoID:
+            # 构建目标文件路径
+            target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
+
+            # 打开文件并写入操作日志
+            with open(target_file_path, 'w', encoding='utf-8') as target_file:
+                # 使用 json.dump 将操作日志转换为 JSON 格式并保存
+                json.dump(fullEvidence, target_file, ensure_ascii=False, indent=4)
+
+            # 输出保存成功的消息
+            print(f"File saved as {target_file_path}")
+        else:
+            # infoID 不存在时的错误提示
+            print("infoID not found in operation_log dictionary")
+
+
+        # save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
 
 #########################删除结果汇总#########################
         print("\n------------------------------")

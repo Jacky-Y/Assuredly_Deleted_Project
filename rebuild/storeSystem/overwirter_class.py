@@ -4,6 +4,8 @@ import math
 import shutil
 import difflib
 import datetime
+import subprocess
+import platform
 
 class JsonOverwriter:
     def __init__(self, granularity, alg_param, level):
@@ -184,6 +186,62 @@ class JsonOverwriter:
     # 这里可以添加更多复杂的分析逻辑
     # 可以对数据进行更深入的分析，例如统计特定类型的字段数量，检查特定的值模式等
     # ...
+
+    def command_delete(self, target_files):
+        """
+        使用系统命令删除指定的文件列表。
+        :param target_files: 要删除的目标文件列表。
+        """
+        # 参数验证
+        if not isinstance(target_files, list) or not all(isinstance(file, str) for file in target_files):
+            raise ValueError("Target files must be a list of file paths.")
+
+        for file_path in target_files:
+            try:
+                self.delete_json(file_path)
+            except FileNotFoundError:
+                self.log(f"File not found: {file_path}", "ERROR")
+            except IOError as e:
+                self.log(f"IO Error deleting file {file_path}: {e}", "ERROR")
+            except Exception as e:
+                self.log(f"Error deleting file {file_path}: {e}", "ERROR")
+                raise
+
+
+    def delete_json(self, file_path):
+        """
+        安全地删除json文件，根据操作系统类型使用不同的删除命令。
+        :param file_path: 要删除的json文件路径。
+        """
+        if not isinstance(file_path, str):
+            raise ValueError("File path must be a string.")
+
+        try:
+            #判断路径是否存在
+            if not os.path.exists(file_path):
+                self.log(f"File not found: {file_path}", "ERROR")
+                return
+            
+            # 检测操作系统类型
+            os_type = platform.system()
+
+            # 根据操作系统类型执行不同的删除命令
+            if os_type == "Linux" or os_type == "Darwin":
+                subprocess.run(["rm", file_path], check=True)
+            elif os_type == "Windows":
+                # Windows系统下的文件路径处理
+                file_path = file_path.replace('/', '\\')
+                subprocess.run(f"del {file_path}", check=True, shell=True)  # 使用shell执行命令
+            else:
+                raise OSError("Unsupported operating system")
+
+            self.log(f"File {file_path} has been deleted successfully", "INFO")
+        except FileNotFoundError:
+            self.log(f"File not found: {file_path}", "ERROR")
+        except subprocess.CalledProcessError as e:
+            self.log(f"Error in executing the delete command: {e}", "ERROR")
+        except OSError as e:
+            self.log(f"OS Error: {e}", "ERROR")
 
 
 class TextOverwriter:
@@ -446,8 +504,61 @@ class TextOverwriter:
             self.log(f"IO Error processing files: {e}", "ERROR")
 
 
-    # 更多函数可以根据需求添加
-    # ...
+    def command_delete(self, target_files):
+        """
+        使用系统命令删除指定的文件列表。
+        :param target_files: 要删除的目标文件列表。
+        """
+        # 参数验证
+        if not isinstance(target_files, list) or not all(isinstance(file, str) for file in target_files):
+            raise ValueError("Target files must be a list of file paths.")
+
+        for file_path in target_files:
+            try:
+                self.delete_txt(file_path)
+            except FileNotFoundError:
+                self.log(f"File not found: {file_path}", "ERROR")
+            except IOError as e:
+                self.log(f"IO Error deleting file {file_path}: {e}", "ERROR")
+            except Exception as e:
+                self.log(f"Error deleting file {file_path}: {e}", "ERROR")
+                raise
+
+
+    def delete_txt(self, file_path):
+        """
+        安全地删除文本文件，根据操作系统类型使用不同的删除命令。
+        :param file_path: 要删除的文本文件路径。
+        """
+        if not isinstance(file_path, str):
+            raise ValueError("File path must be a string.")
+
+        try:
+            #判断路径是否存在
+            if not os.path.exists(file_path):
+                self.log(f"File not found: {file_path}", "ERROR")
+                return
+            
+            # 检测操作系统类型
+            os_type = platform.system()
+
+            # 根据操作系统类型执行不同的删除命令
+            if os_type == "Linux" or os_type == "Darwin":
+                subprocess.run(["rm", file_path], check=True)
+            elif os_type == "Windows":
+                # Windows系统下的文件路径处理
+                file_path = file_path.replace('/', '\\')
+                subprocess.run(f"del {file_path}", check=True, shell=True)  # 使用shell执行命令
+            else:
+                raise OSError("Unsupported operating system")
+
+            self.log(f"File {file_path} has been deleted successfully", "INFO")
+        except FileNotFoundError:
+            self.log(f"File not found: {file_path}", "ERROR")
+        except subprocess.CalledProcessError as e:
+            self.log(f"Error in executing the delete command: {e}", "ERROR")
+        except OSError as e:
+            self.log(f"OS Error: {e}", "ERROR")
 
 class VideoOverwriter:
     def __init__(self, alg_param, level):
@@ -608,21 +719,64 @@ class VideoOverwriter:
         except IOError as e:
             self.log(f"IO Error: {e}", "ERROR")
 
+    
+    def command_delete(self, target_files):
+        """
+        使用系统命令删除指定的文件列表。
+        :param target_files: 要删除的目标文件列表。
+        """
+        # 参数验证
+        if not isinstance(target_files, list) or not all(isinstance(file, str) for file in target_files):
+            raise ValueError("Target files must be a list of file paths.")
+
+        for file_path in target_files:
+            try:
+                self.delete_video(file_path)
+            except FileNotFoundError:
+                self.log(f"File not found: {file_path}", "ERROR")
+            except IOError as e:
+                self.log(f"IO Error deleting file {file_path}: {e}", "ERROR")
+            except Exception as e:
+                self.log(f"Error deleting file {file_path}: {e}", "ERROR")
+                raise
+
+
     def delete_video(self, file_path):
         """
-        安全地删除视频文件。
+        安全地删除视频文件，根据操作系统类型使用不同的删除命令。
         :param file_path: 要删除的视频文件路径。
         """
         if not isinstance(file_path, str):
             raise ValueError("File path must be a string.")
 
         try:
-            os.remove(file_path)
+            #判断路径是否存在
+            if not os.path.exists(file_path):
+                self.log(f"File not found: {file_path}", "ERROR")
+                return
+            
+            # 检测操作系统类型
+            os_type = platform.system()
+
+            # 根据操作系统类型执行不同的删除命令
+            if os_type == "Linux" or os_type == "Darwin":
+                subprocess.run(["rm", file_path], check=True)
+            elif os_type == "Windows":
+                # Windows系统下的文件路径处理
+                file_path = file_path.replace('/', '\\')
+                subprocess.run(f"del {file_path}", check=True, shell=True)  # 使用shell执行命令
+            else:
+                raise OSError("Unsupported operating system")
+
             self.log(f"File {file_path} has been deleted successfully", "INFO")
         except FileNotFoundError:
             self.log(f"File not found: {file_path}", "ERROR")
-        except IOError as e:
-            self.log(f"IO Error: {e}", "ERROR")
+        except subprocess.CalledProcessError as e:
+            self.log(f"Error in executing the delete command: {e}", "ERROR")
+        except OSError as e:
+            self.log(f"OS Error: {e}", "ERROR")
+
+
 
     def rename_video(self, file_path, new_name):
         """
@@ -837,21 +991,64 @@ class AudioOverwriter:
         except IOError as e:
             self.log(f"IO Error: {e}", "ERROR")
 
+    
+    def command_delete(self, target_files):
+        """
+        使用系统命令删除指定的文件列表。
+        :param target_files: 要删除的目标文件列表。
+        """
+        # 参数验证
+        if not isinstance(target_files, list) or not all(isinstance(file, str) for file in target_files):
+            raise ValueError("Target files must be a list of file paths.")
+
+        for file_path in target_files:
+            try:
+                self.delete_audio(file_path)
+            except FileNotFoundError:
+                self.log(f"File not found: {file_path}", "ERROR")
+            except IOError as e:
+                self.log(f"IO Error deleting file {file_path}: {e}", "ERROR")
+            except Exception as e:
+                self.log(f"Error deleting file {file_path}: {e}", "ERROR")
+                raise
+
+
     def delete_audio(self, file_path):
         """
-        安全地删除音频文件。
+        安全地删除音频文件，根据操作系统类型使用不同的删除命令。
         :param file_path: 要删除的音频文件路径。
         """
         if not isinstance(file_path, str):
             raise ValueError("File path must be a string.")
 
         try:
-            os.remove(file_path)
+            #判断路径是否存在
+            if not os.path.exists(file_path):
+                self.log(f"File not found: {file_path}", "ERROR")
+                return
+            
+            # 检测操作系统类型
+            os_type = platform.system()
+
+            # 根据操作系统类型执行不同的删除命令
+            if os_type == "Linux" or os_type == "Darwin":
+                subprocess.run(["rm", file_path], check=True)
+            elif os_type == "Windows":
+                # Windows系统下的文件路径处理
+                file_path = file_path.replace('/', '\\')
+                subprocess.run(f"del {file_path}", check=True, shell=True)  # 使用shell执行命令
+            else:
+                raise OSError("Unsupported operating system")
+
             self.log(f"File {file_path} has been deleted successfully", "INFO")
         except FileNotFoundError:
             self.log(f"File not found: {file_path}", "ERROR")
-        except IOError as e:
-            self.log(f"IO Error: {e}", "ERROR")
+        except subprocess.CalledProcessError as e:
+            self.log(f"Error in executing the delete command: {e}", "ERROR")
+        except OSError as e:
+            self.log(f"OS Error: {e}", "ERROR")
+
+
 
     def rename_audio(self, file_path, new_name):
         """
@@ -1065,21 +1262,64 @@ class ImageOverwriter:
         except IOError as e:
             self.log(f"IO Error: {e}", "ERROR")
 
+    def command_delete(self, target_files):
+        """
+        使用系统命令删除指定的文件列表。
+        :param target_files: 要删除的目标文件列表。
+        """
+        # 参数验证
+        if not isinstance(target_files, list) or not all(isinstance(file, str) for file in target_files):
+            raise ValueError("Target files must be a list of file paths.")
+
+        for file_path in target_files:
+            try:
+                self.delete_image(file_path)
+            except FileNotFoundError:
+                self.log(f"File not found: {file_path}", "ERROR")
+            except IOError as e:
+                self.log(f"IO Error deleting file {file_path}: {e}", "ERROR")
+            except Exception as e:
+                self.log(f"Error deleting file {file_path}: {e}", "ERROR")
+                raise
+
+
     def delete_image(self, file_path):
         """
-        安全地删除图片文件。
+        安全地删除图片文件，根据操作系统类型使用不同的删除命令。
         :param file_path: 要删除的图片文件路径。
         """
         if not isinstance(file_path, str):
             raise ValueError("File path must be a string.")
 
         try:
-            os.remove(file_path)
+            #判断路径是否存在
+            if not os.path.exists(file_path):
+                self.log(f"File not found: {file_path}", "ERROR")
+                return
+            
+            # 检测操作系统类型
+            os_type = platform.system()
+
+            # 根据操作系统类型执行不同的删除命令
+            if os_type == "Linux" or os_type == "Darwin":
+                subprocess.run(["rm", file_path], check=True)
+            elif os_type == "Windows":
+                # Windows系统下的文件路径处理
+                file_path = file_path.replace('/', '\\')
+                subprocess.run(f"del {file_path}", check=True, shell=True)  # 使用shell执行命令
+            else:
+                raise OSError("Unsupported operating system")
+
             self.log(f"File {file_path} has been deleted successfully", "INFO")
         except FileNotFoundError:
             self.log(f"File not found: {file_path}", "ERROR")
-        except IOError as e:
-            self.log(f"IO Error: {e}", "ERROR")
+        except subprocess.CalledProcessError as e:
+            self.log(f"Error in executing the delete command: {e}", "ERROR")
+        except OSError as e:
+            self.log(f"OS Error: {e}", "ERROR")
+
+
+
 
     def rename_image(self, file_path, new_name):
         """

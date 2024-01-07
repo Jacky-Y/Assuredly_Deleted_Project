@@ -41,7 +41,7 @@ class OperationLogModel:
                     evidenceID VARCHAR(128) NOT NULL,
                     msgVersion INT,
                     submittime DATETIME,
-                    globalID VARCHAR(128) NOT NULL,
+                    infoID VARCHAR(128) NOT NULL,
                     status VARCHAR(255),
                     title VARCHAR(255),
                     abstract VARCHAR(1000),
@@ -50,7 +50,7 @@ class OperationLogModel:
                     infoType INT,
                     deletePerformer VARCHAR(255),
                     deletePerformTime DATETIME,
-                    deleteDupInfoID VARCHAR(1000),
+                    deleteDupinfoID VARCHAR(1000),
                     deleteInstruction VARCHAR(1000),
                     deleteControlSet VARCHAR(1000),
                     deleteAlg INT,
@@ -66,7 +66,7 @@ class OperationLogModel:
                     dataHash VARCHAR(255),
                     datasign VARCHAR(255),
                     isRoot BOOLEAN,
-                    PRIMARY KEY (evidenceID, globalID)
+                    PRIMARY KEY (evidenceID, infoID)
                 )
                 """
                 cursor = self.conn.cursor()
@@ -87,9 +87,9 @@ class OperationLogModel:
             add_query = """
             INSERT INTO OperationLog (
                 systemID, systemIP, mainCMD, subCMD, evidenceID, msgVersion, 
-                submittime, globalID, status, title, abstract, keyWords, 
+                submittime, infoID, status, title, abstract, keyWords, 
                 category, infoType, deletePerformer, deletePerformTime, 
-                deleteDupInfoID, deleteInstruction, deleteControlSet, deleteAlg, 
+                deleteDupinfoID, deleteInstruction, deleteControlSet, deleteAlg, 
                 deleteAlgParam, deleteLevel, pathtree, affairsID, userID, 
                 classification_info, deleteMethod, deleteGranularity, deleteKeyinfoID, 
                 dataHash, datasign, isRoot
@@ -101,7 +101,7 @@ class OperationLogModel:
             """
 
             # Serialize nested JSON objects
-            record['data']['deleteDupInfoID'] = json.dumps(record['data']['deleteDupInfoID'])
+            record['data']['deleteDupinfoID'] = json.dumps(record['data']['deleteDupinfoID'])
             record['data']['deleteInstruction'] = json.dumps(record['data']['deleteInstruction'])
             record['data']['pathtree'] = json.dumps(record['data']['pathtree'])
             record['data']['classification_info'] = json.dumps(record['data']['classification_info'])
@@ -116,7 +116,7 @@ class OperationLogModel:
                 record['evidenceID'], 
                 record['msgVersion'], 
                 record['submittime'], 
-                record['data']['globalID'], 
+                record['data']['infoID'], 
                 record['data']['status'], 
                 record['data']['title'], 
                 record['data']['abstract'], 
@@ -125,7 +125,7 @@ class OperationLogModel:
                 record['data']['infoType'], 
                 record['data']['deletePerformer'], 
                 record['data']['deletePerformTime'], 
-                record['data']['deleteDupInfoID'], 
+                record['data']['deleteDupinfoID'], 
                 record['data']['deleteInstruction'], 
                 record['data']['deleteControlSet'], 
                 record['data']['deleteAlg'], 
@@ -139,7 +139,7 @@ class OperationLogModel:
                 record['data']['deleteGranularity'], 
                 record['data']['deleteKeyinfoID'], 
                 record['dataHash'], 
-                record['datasign'], 
+                record['datasign'],
                 record['isRoot']
             )
 
@@ -158,11 +158,11 @@ class OperationLogModel:
                 print(f"An error occurred while inserting the record: {e}")
                 raise  # 继续向上抛出非主键重复的异常
 
-    def get_records_by_globalID(self, globalID):
+    def get_records_by_infoID(self, infoID):
         try:
             cursor = self.conn.cursor(dictionary=True)
-            query = "SELECT * FROM OperationLog WHERE globalID = %s"
-            cursor.execute(query, (globalID,))
+            query = "SELECT * FROM OperationLog WHERE infoID = %s"
+            cursor.execute(query, (infoID,))
             rows = cursor.fetchall()
             cursor.close()
 
@@ -186,13 +186,13 @@ class OperationLogModel:
             print(f"An error occurred while querying the record: {e}")
             raise
 
-    # evidenceID 和 globalID 是用来定位要更新的记录的。
+    # evidenceID 和 infoID 是用来定位要更新的记录的。
     # update_data 是一个字典，包含要更新的字段及其新值。例如，{'status': '已处理', 'title': '更新后的标题'}。
     # 方法构建了一个动态的 SQL 更新语句，根据 update_data 中的键和值来设置字段。
     # 使用 cursor.execute 执行更新操作，然后提交更改。
     # 如果没有记录被更新，将打印 "No record updated"；否则，打印更新的记录数。
 
-    def update_record(self, evidenceID, globalID, update_data):
+    def update_record(self, evidenceID, infoID, update_data):
         try:
             cursor = self.conn.cursor()
 
@@ -201,10 +201,10 @@ class OperationLogModel:
             update_values = list(update_data.values())
 
             # 构建更新 SQL 语句
-            update_query = f"UPDATE OperationLog SET {update_parts} WHERE evidenceID = %s AND globalID = %s"
+            update_query = f"UPDATE OperationLog SET {update_parts} WHERE evidenceID = %s AND infoID = %s"
 
-            # 添加 evidenceID 和 globalID 到参数列表
-            update_values.extend([evidenceID, globalID])
+            # 添加 evidenceID 和 infoID 到参数列表
+            update_values.extend([evidenceID, infoID])
 
             # 执行更新操作
             cursor.execute(update_query, tuple(update_values))
@@ -219,11 +219,11 @@ class OperationLogModel:
             print(f"An error occurred while updating the record: {e}")
             raise
 
-    def delete_record_by_primary_key(self, evidenceID, globalID):
+    def delete_record_by_primary_key(self, evidenceID, infoID):
         try:
             cursor = self.conn.cursor()
-            delete_query = "DELETE FROM OperationLog WHERE evidenceID = %s AND globalID = %s"
-            cursor.execute(delete_query, (evidenceID, globalID))
+            delete_query = "DELETE FROM OperationLog WHERE evidenceID = %s AND infoID = %s"
+            cursor.execute(delete_query, (evidenceID, infoID))
             self.conn.commit()
 
             if cursor.rowcount == 0:
@@ -276,9 +276,9 @@ class OperationLogModel:
             insert_query = """
             INSERT INTO OperationLog (
                 systemID, systemIP, mainCMD, subCMD, evidenceID, msgVersion, 
-                submittime, globalID, status, title, abstract, keyWords, 
+                submittime, infoID, status, title, abstract, keyWords, 
                 category, infoType, deletePerformer, deletePerformTime, 
-                deleteDupInfoID, deleteInstruction, deleteControlSet, deleteAlg, 
+                deleteDupinfoID, deleteInstruction, deleteControlSet, deleteAlg, 
                 deleteAlgParam, deleteLevel, pathtree, affairsID, userID, 
                 classification_info, deleteMethod, deleteGranularity, deleteKeyinfoID, 
                 dataHash, datasign, isRoot
@@ -292,7 +292,7 @@ class OperationLogModel:
             values = []
             for record in records:
                 # 序列化嵌套 JSON 对象
-                record['data']['deleteDupInfoID'] = json.dumps(record['data']['deleteDupInfoID'])
+                record['data']['deleteDupinfoID'] = json.dumps(record['data']['deleteDupinfoID'])
                 record['data']['deleteInstruction'] = json.dumps(record['data']['deleteInstruction'])
                 record['data']['pathtree'] = json.dumps(record['data']['pathtree'])
                 record['data']['classification_info'] = json.dumps(record['data']['classification_info'])
@@ -307,7 +307,7 @@ class OperationLogModel:
                 record['evidenceID'], 
                 record['msgVersion'], 
                 record['submittime'], 
-                record['data']['globalID'], 
+                record['data']['infoID'], 
                 record['data']['status'], 
                 record['data']['title'], 
                 record['data']['abstract'], 
@@ -316,7 +316,7 @@ class OperationLogModel:
                 record['data']['infoType'], 
                 record['data']['deletePerformer'], 
                 record['data']['deletePerformTime'], 
-                record['data']['deleteDupInfoID'], 
+                record['data']['deleteDupinfoID'], 
                 record['data']['deleteInstruction'], 
                 record['data']['deleteControlSet'], 
                 record['data']['deleteAlg'], 
@@ -387,78 +387,118 @@ class OperationLogModel:
             print(f"An error occurred while getting statistics: {e}")
             raise
 
-def export_data_to_csv(self, query, csv_file_path):
-    try:
-        cursor = self.conn.cursor()
-        cursor.execute(query)
-        rows = cursor.fetchall()
-        cursor.close()
+    def export_data_to_csv(self, query, csv_file_path):
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            cursor.close()
 
-        # 获取列名
-        column_names = [i[0] for i in cursor.description]
+            # 获取列名
+            column_names = [i[0] for i in cursor.description]
 
-        # 写入 CSV
-        with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
-            writer = csv.writer(file)
-            writer.writerow(column_names)
-            writer.writerows(rows)
+            # 写入 CSV
+            with open(csv_file_path, mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                writer.writerow(column_names)
+                writer.writerows(rows)
 
-        print(f"Data exported successfully to {csv_file_path}")
-    except Error as e:
-        print(f"An error occurred while exporting data: {e}")
-        raise
+            print(f"Data exported successfully to {csv_file_path}")
+        except Error as e:
+            print(f"An error occurred while exporting data: {e}")
+            raise
 
 
 
-def backup_database(self, backup_path, db_name):
-    try:
-        # 构建备份命令
-        backup_command = f"mysqldump -u {self.user} -p{self.password} {db_name} > {backup_path}"
+    def backup_database(self, backup_path, db_name):
+        try:
+            # 构建备份命令
+            backup_command = f"mysqldump -u {self.user} -p{self.password} {db_name} > {backup_path}"
 
-        # 执行备份命令
-        process = subprocess.Popen(backup_command, shell=True)
-        process.wait()
+            # 执行备份命令
+            process = subprocess.Popen(backup_command, shell=True)
+            process.wait()
 
-        if process.returncode == 0:
-            print(f"Database backup successful. File saved as {backup_path}")
-        else:
-            print("Database backup failed.")
-    except Exception as e:
-        print(f"An error occurred while backing up the database: {e}")
+            if process.returncode == 0:
+                print(f"Database backup successful. File saved as {backup_path}")
+            else:
+                print("Database backup failed.")
+        except Exception as e:
+            print(f"An error occurred while backing up the database: {e}")
 
-def restore_database(self, backup_path, db_name):
-    try:
-        # 构建恢复命令
-        restore_command = f"mysql -u {self.user} -p{self.password} {db_name} < {backup_path}"
+    def restore_database(self, backup_path, db_name):
+        try:
+            # 构建恢复命令
+            restore_command = f"mysql -u {self.user} -p{self.password} {db_name} < {backup_path}"
 
-        # 执行恢复命令
-        process = subprocess.Popen(restore_command, shell=True)
-        process.wait()
+            # 执行恢复命令
+            process = subprocess.Popen(restore_command, shell=True)
+            process.wait()
 
-        if process.returncode == 0:
-            print("Database restore successful.")
-        else:
-            print("Database restore failed.")
-    except Exception as e:
-        print(f"An error occurred while restoring the database: {e}")
+            if process.returncode == 0:
+                print("Database restore successful.")
+            else:
+                print("Database restore failed.")
+        except Exception as e:
+            print(f"An error occurred while restoring the database: {e}")
 
-def open_connection(self):
-    try:
-        self.conn = mysql.connector.connect(
-            host=self.host,
-            user=self.user,
-            password=self.password,
-            database=self.database
-        )
-        print("Database connection successfully opened.")
-    except mysql.connector.Error as e:
-        print(f"Error opening database connection: {e}")
-        raise
+    def open_connection(self):
+        try:
+            self.conn = mysql.connector.connect(
+                host=self.host,
+                user=self.user,
+                password=self.password,
+                database=self.database
+            )
+            print("Database connection successfully opened.")
+        except mysql.connector.Error as e:
+            print(f"Error opening database connection: {e}")
+            raise
 
-def close_connection(self):
-    if self.conn.is_connected():
-        self.conn.close()
-        print("Database connection closed.")
+    def close_connection(self):
+        if self.conn.is_connected():
+            self.conn.close()
+            print("Database connection closed.")
+
+    def format_log(self,x):
+        y=json.loads(x)
+        final_list=[]
+        for original_dict in y:
+
+            del original_dict['isRoot']
+            del original_dict['pathtree']
+            del original_dict['status']
+            
+
+            # 指定要保留在外层的键
+            keys_to_keep = ["dataHash",
+                            "datasign",
+                            "evidenceID",
+                            "mainCMD",
+                            "msgVersion",
+                            "subCMD",
+                            "submittime",
+                            "systemID",
+                            "systemIP"]
+
+            # 创建嵌套字典，其中包含除 keys_to_keep 之外的所有键
+            nested_dict = {key: value for key, value in original_dict.items() if key not in keys_to_keep}
+
+            # 创建最终的字典
+            final_dict = {
+                "data": nested_dict
+            }
+
+            # 将要保留在外层的键添加到最终的字典中
+            for key in keys_to_keep:
+                if key in original_dict:
+                    final_dict[key] = original_dict[key]
+
+            final_list.append(final_dict)
+        return final_list
+    
+
+
 
 
 
@@ -473,23 +513,61 @@ if __name__=="__main__":
 
 
     #############增###############
-    # 文件路径
-    file_path = './log/0c1d2e3f4g5h_16881233.json'
+    # # 文件路径
+    # file_path = './log/0c1d2e3f4g5h_16881233.json'
 
-    # 从文件中读取 JSON 数据
-    with open(file_path, 'r', encoding='utf-8') as file:
-        data = json.load(file)
+    # # 从文件中读取 JSON 数据
+    # with open(file_path, 'r', encoding='utf-8') as file:
+    #     data = json.load(file)
 
 
-    # 此时，data 是一个包含 JSON 数据的 Python 字典
-    print(data)
+    # # 此时，data 是一个包含 JSON 数据的 Python 字典
+    # print(data)
 
-    db_model.add_record(data)
+    # db_model.add_record(data)
 
 
     #############查###############
-    # x=db_model.get_records_by_globalID('0c1d2e3f4g5h')
-    # print(x)
+    x=db_model.get_records_by_infoID('0c1d2e3f4g5h')
+
+    print(db_model.format_log(x))
+    # y=json.loads(x)
+    # original_dict =y[0]
+
+    # del original_dict['isRoot']
+    # del original_dict['pathtree']
+    # del original_dict['status']
+    
+
+    # # 指定要保留在外层的键
+    # keys_to_keep = ["dataHash",
+    #                 "datasign",
+    #                 "evidenceID",
+    #                 "mainCMD",
+    #                 "msgVersion",
+    #                 "subCMD",
+    #                 "submittime",
+    #                 "systemID",
+    #                 "systemIP"]
+
+    # # 创建嵌套字典，其中包含除 keys_to_keep 之外的所有键
+    # nested_dict = {key: value for key, value in original_dict.items() if key not in keys_to_keep}
+
+    # # 创建最终的字典
+    # final_dict = {
+    #     "data": nested_dict
+    # }
+
+    # # 将要保留在外层的键添加到最终的字典中
+    # for key in keys_to_keep:
+    #     if key in original_dict:
+    #         final_dict[key] = original_dict[key]
+
+    # print(final_dict)
+
+    # with open('./log/mk.json', 'w', encoding='utf-8') as target_file:
+    # # 使用 json.dump 将操作日志转换为 JSON 格式并保存
+    #     json.dump(final_dict, target_file, ensure_ascii=False, indent=4)
 
 
     # # 定义要查询的时间段
@@ -508,7 +586,7 @@ if __name__=="__main__":
 
     # # 要更新的记录的标识符
     # evidenceID = "某个evidenceID"
-    # globalID = "某个globalID"
+    # infoID = "某个infoID"
 
     # # 要更新的数据
     # update_data = {
@@ -517,12 +595,12 @@ if __name__=="__main__":
     # }
 
     # # 调用更新方法
-    # db_model.update_record(evidenceID, globalID, update_data)
+    # db_model.update_record(evidenceID, infoID, update_data)
 
 
     #############删###############
     # # 删除特定主键的记录
-    # db_model.delete_record_by_primary_key("some_evidenceID", "some_globalID")
+    # db_model.delete_record_by_primary_key("some_evidenceID", "some_infoID")
 
     # # 删除指定时间段的记录
     # db_model.delete_records_by_time_period("2024-01-01 00:00:00", "2024-01-07 23:59:59")
