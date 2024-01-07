@@ -236,6 +236,59 @@ def gather_result():
         return jsonify({"message": "Result received"}), 200
     else:
         return jsonify({"error": "Invalid data received"}), 400
+    
+
+#模拟邓鑫系统
+@app.route('/getIntentLog', methods=['POST'])
+def get_intention_log():
+    # 文件路径
+    file_path = './log/Delete_Intent_log.json'
+
+    # 从文件中读取 JSON 数据
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    return jsonify(data)
+
+@app.route('/getRequestLog', methods=['POST'])
+def get_request_log():
+    # 文件路径
+    file_path = './log/Delete_Request_log.json'
+
+    # 从文件中读取 JSON 数据
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    return jsonify(data)
+
+
+@app.route('/getTriggerLog', methods=['POST'])
+def get_trigger_log():
+    # 文件路径
+    file_path = './log/Delete_Trigger_log.json'
+
+    # 从文件中读取 JSON 数据
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    return jsonify(data)
+@app.route('/getNotificationLog', methods=['POST'])
+def get_notification_log():
+    # 文件路径
+    file_path = './log/Delete_Notification_log.json'
+
+    # 从文件中读取 JSON 数据
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    return jsonify(data)
+
+@app.route('/getConfirmationLog', methods=['POST'])
+def get_confirmation_log():
+    # 文件路径
+    file_path = './log/Delete_Confirmation_log.json'
+
+    # 从文件中读取 JSON 数据
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+
+    return jsonify(data)
 
 # 路由：/getOperationLog
 # 功能：根据请求数据获取操作日志
@@ -252,21 +305,67 @@ def get_operation_log():
         print(data)
 
         # 解析基本字段
-        system_id = data.get('systemID')
-        system_ip = data.get('systemIP')
-        main_cmd = data.get('mainCMD')
-        sub_cmd = data.get('subCMD')
-        evidence_id = data.get('evidenceID')
-        msg_version = data.get('msgVersion')
-        submittime = data.get('submittime')
-        data_hash = data.get('dataHash')
-        datasign = data.get('datasign')
+        # 假设 data 是一个字典，包含各种可能的键值对
+
+        # 检查是否存在 'systemID'，如果存在，则获取 system_id 的值
+        if 'systemID' in data:
+            system_id = data.get('systemID')  # 系统ID
+
+        # 检查是否存在 'systemIP'，如果存在，则获取 system_ip 的值
+        if 'systemIP' in data:
+            system_ip = data.get('systemIP')  # 系统IP地址
+
+        # 检查是否存在 'mainCMD'，如果存在，则获取 main_cmd 的值
+        if 'mainCMD' in data:
+            main_cmd = data.get('mainCMD')  # 主命令
+
+        # 检查是否存在 'subCMD'，如果存在，则获取 sub_cmd 的值
+        if 'subCMD' in data:
+            sub_cmd = data.get('subCMD')  # 子命令
+
+        # 检查是否存在 'evidenceID'，如果存在，则获取 evidence_id 的值
+        if 'evidenceID' in data:
+            evidence_id = data.get('evidenceID')  # 证据ID
+
+        # 检查是否存在 'msgVersion'，如果存在，则获取 msg_version 的值
+        if 'msgVersion' in data:
+            msg_version = data.get('msgVersion')  # 消息版本
+
+        # 检查是否存在 'submittime'，如果存在，则获取 submittime 的值
+        if 'submittime' in data:
+            submittime = data.get('submittime')  # 提交时间
+
+        # 检查是否存在 'dataHash'，如果存在，则获取 data_hash 的值
+        if 'dataHash' in data:
+            data_hash = data.get('dataHash')  # 数据哈希
+
+        # 检查是否存在 'datasign'，如果存在，则获取 datasign 的值
+        if 'datasign' in data:
+            datasign = data.get('datasign')  # 数据签名
+
 
         #对infoID的解析
-        infoID = data.get('data', {}).get('infoID', '')
+        # 检查 'data' 键是否存在于 data 字典中且其值是否为一个字典
+        if 'data' in data and isinstance(data['data'], dict):
+            # 提取 'affairsID' 字段
+            # 如果 'data' 字典中存在 'affairsID'，则获取其值，否则设为默认空字符串
+            affairsID = data['data'].get('affairsID', '')
+
+            # 提取 'infoID' 字段
+            # 如果 'data' 字典中存在 'infoID'，则获取其值，否则设为默认空字符串
+            infoID = data['data'].get('infoID', '')
+
+            # 提取 'time' 字段
+            # 如果 'data' 字典中存在 'time'，则获取其值，否则设为默认空字符串
+            time_str = data['data'].get('time', '')
+        else:
+            # 如果 'data' 键不存在或其值不是字典，则将所有字段设为默认空字符串
+            affairsID = ''
+            infoID = ''
+            time_str = ''
+
 
         # 特别处理 'data' 字典内的 'time' 字段
-        time_str = data.get('data', {}).get('time', '')
         start_time, end_time = None, None
         if 'to' in time_str:
             start_time_str, end_time_str = time_str.split(' to ')
@@ -277,11 +376,17 @@ def get_operation_log():
 
         db_model = OperationLogModel("127.0.0.1", "root", "123456", "assured_deletion")
 
-        if not infoID:
+        if infoID and affairsID:
+            result_json = db_model.get_records_by_infoID_affairsID(infoID, affairsID)
+
+        elif  not infoID:
             result_json = db_model.get_records_by_time_period(start_time, end_time)
 
-        if not time_str:
+        elif  not time_str:
             result_json = db_model.get_records_by_infoID(infoID)
+        
+        else:
+            return jsonify({"error": "wrong request format"}), 500
 
         op_log=db_model.format_log(result_json)
 

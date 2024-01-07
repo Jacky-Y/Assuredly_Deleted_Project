@@ -171,6 +171,20 @@ class OperationLogModel:
         except Error as e:
             print(f"An error occurred while querying the record: {e}")
             raise
+    
+    def get_records_by_infoID_affairsID(self, infoID,affairsID):
+        try:
+            cursor = self.conn.cursor(dictionary=True)
+            query = "SELECT * FROM OperationLog WHERE infoID = %s and affairsID = %s"
+            cursor.execute(query, (infoID,affairsID,))
+            rows = cursor.fetchall()
+            cursor.close()
+
+            # 将查询结果转换为 JSON 列表
+            return json.dumps(rows, default=str)  # 使用 default=str 以处理日期时间对象
+        except Error as e:
+            print(f"An error occurred while querying the record: {e}")
+            raise
 
     def get_records_by_time_period(self, start_time, end_time):
         try:
@@ -528,9 +542,13 @@ if __name__=="__main__":
 
 
     #############查###############
-    x=db_model.get_records_by_infoID('0c1d2e3f4g5h')
+    # temp=db_model.get_records_by_infoID_affairsID('0c1d2e3f4g5h','16881233')
+    # print(temp)
 
-    print(db_model.format_log(x))
+
+    # x=db_model.get_records_by_infoID('0c1d2e3f4g5h')
+
+    # print(db_model.format_log(x))
     # y=json.loads(x)
     # original_dict =y[0]
 
