@@ -74,6 +74,8 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
 
     # 构造普通数据的删除命令
     duplicationDelCommand = {
+        #指定infoID
+        "infoID": infoID,
         # 指定删除目标的位置
         "target": locations,              
         # 指定删除操作的粒度
@@ -90,6 +92,8 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
 
     # 构造关键数据的删除命令
     keyDelCommand = {
+        #指定infoID
+        "infoID": infoID,
         # 指定关键数据删除目标的位置
         "target": key_locations,           
         # 指定使用的删除算法

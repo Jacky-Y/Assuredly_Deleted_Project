@@ -16,6 +16,7 @@ from model.InfoTypesManager import InfoTypesManager
 from model.KeyStatusManager import KeyStatusManager
 from model.PlaintextLocationManager import PlaintextLocationManager
 from model.EncryptionStatusManager import EncryptionStatusManager
+import cipher_center
 
 
 db_config = {
@@ -31,6 +32,7 @@ infoTypesManager=InfoTypesManager(db_config)
 keyStatusManager=KeyStatusManager(db_config)
 plaintextLocationManager=PlaintextLocationManager(db_config)
 encryptionStatusManager=EncryptionStatusManager(db_config)
+ciphercenter = cipher_center.CipherCTR()
 
 
 app = Flask(__name__)
@@ -169,23 +171,38 @@ def get_info_type():
 def get_centralized_key():
     data = request.json
     infoID = data.get("infoID", "")
-    for item in centralized_key_info:
-        if item["infoID"] == infoID:
-            return jsonify({"infoID": infoID, "Locations": item["Locations"]})
+    # for item in centralized_key_info:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({"infoID": infoID, "Locations": item["Locations"]})
+    try:
+        ret = ciphercenter.search_by_infoid(infoID)
+        
+        return jsonify({"infoID": infoID, "Locations":ret})
+    except Exception as e:
+        print(str(e))
 
-    # If infoID does not exist in the list
-    return jsonify({"Error": "infoID not found"}), 404
+        # If infoID does not exist in the list
+        return jsonify({"Error": str(e)}), 404
 
 @app.route('/getDecentralizedKey', methods=['POST'])
 def get_decentralized_key():
     data = request.json
     infoID = data.get("infoID", "")
-    for item in decentralized_key_info:
-        if item["infoID"] == infoID:
-            return jsonify({"infoID": infoID, "Locations": item["Locations"]})
+    try:
+        ret = ciphercenter.search_by_infoid(infoID)
+        
+        return jsonify({"infoID": infoID, "Locations":ret})
+    except Exception as e:
+        print(str(e))
 
-    # If infoID does not exist in the list 
-    return jsonify({"Error": "infoID not found"}), 404
+        # If infoID does not exist in the list
+        return jsonify({"Error": str(e)}), 404
+    # for item in decentralized_key_info:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({"infoID": infoID, "Locations": item["Locations"]})
+
+    # # If infoID does not exist in the list 
+    # return jsonify({"Error": "infoID not found"}), 404
 
 @app.route('/getStatus', methods=['POST'])
 def get_status():
@@ -198,6 +215,25 @@ def get_status():
     # If infoID does not exist in the list
     return jsonify({"Error": "infoID not found"}), 404
 
+@app.route('/getEncDuplicationLocations', methods=['POST'])
+def get_enc_duplication_locations():
+    data = request.json
+    infoID = data.get("infoID", "")
+    try:
+        ret = ciphercenter.search_duplocation(infoID)
+        return jsonify({"infoID": infoID, "Locations": ret})
+    except Exception as e:
+        print(str(e))
+
+        # If infoID does not exist in the list
+        return jsonify({"Error": str(e)}), 404
+
+    # for item in duplication_info:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({"infoID": infoID, "Locations": item["Locations"]})
+
+    # # If infoID does not exist in the list
+    # return jsonify({"Error": "infoID not found"}), 404
 
 @app.route('/getDuplicationLocations', methods=['POST'])
 def get_duplication_locations():
@@ -214,12 +250,81 @@ def get_duplication_locations():
 def get_key_storage_method():
     data = request.json
     infoID = data.get("infoID", "")
-    for item in key_status:
-        if item["infoID"] == infoID:
-            return jsonify({"infoID": infoID, "KeyStorageMethod": item["KeyStorageMethod"]})
+    try:
+        _ret = ciphercenter.search_by_infoid(infoID)
+        if len(_ret) == 1:
+            ret = "Centralized"
+        else:
+            ret = "Decentralized"
+        return jsonify({"infoID": infoID, "KeyStorageMethod":ret})
+    except Exception as e:
+        print(str(e))
+
+        # If infoID does not exist in the list
+        return jsonify({"Error": str(e)}), 404
+
+    # for item in key_status:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({"infoID": infoID, "KeyStorageMethod": item["KeyStorageMethod"]})
 
     # If infoID does not exist in the list
-    return jsonify({"Error": "infoID not found"}), 404
+    # return jsonify({"Error": "infoID not found"}), 404
+
+@app.route('/duplicationEncDel', methods=['POST'])
+def duplication_enc_del():
+    print("---------开始对副本进行删除-------------")
+    # 获取POST请求中的JSON数据
+    data = request.json
+    # 提取duplicationDelCommand命令
+    duplication_del_command = data.get('duplicationDelCommand')
+    
+    if not duplication_del_command:
+        return jsonify({"status": "error", "message": "duplicationDelCommand not provided"}), 400
+
+    # 分别解析各个字段
+    infoID = duplication_del_command.get('infoID')
+    target_files = duplication_del_command.get('target')
+    delete_alg=duplication_del_command.get('deleteAlg')
+    delete_granularity = duplication_del_command.get('deleteGranularity', None)  # 如果字段不存在则返回None
+    delete_alg_param = duplication_del_command.get('deleteAlgParam')
+    delete_level = duplication_del_command.get('deleteLevel')
+    info_type=duplication_del_command.get('infoType')
+
+
+    #计算vrf
+    vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
+
+    # 将二进制数据转换为 Base64 字符串
+    base64_vrf_output = base64.b64encode(vrf_output)
+    base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
+
+    print("使用以下VRF随机输出进行覆写副本文件:",base64_vrf_output_string)
+
+    ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
+
+    if delete_granularity:
+        try:
+            if delete_alg=="overwrittenDelete":
+                ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            elif delete_alg=="commandDelete":
+                ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
+                return jsonify({"status": "success", "message": "Command delete operation completed successfully."})
+        except Exception as e:
+            print(str(e))
+            return jsonify({"status": "error", "message": str(e)}), 500
+    else:
+        try:
+            if delete_alg=="overwrittenDelete":
+                ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            elif delete_alg=="commandDelete":
+                ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
+                return jsonify({"status": "success", "message": "Command delete operation completed successfully."})
+        except Exception as e:
+            print(str(e))
+            return jsonify({"status": "error", "message": str(e)}), 500
+
 
 @app.route('/duplicationDel', methods=['POST'])
 def duplication_del():
@@ -354,7 +459,7 @@ def duplication_del():
                 # 调用 command_delete 方法
                 jsonoverwriter.command_delete(target_files)
 
-                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+                return jsonify({"status": "success", "message": "Command deletion operation completed successfully."})
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
             
@@ -369,7 +474,7 @@ def duplication_del():
                 # 调用 command_delete 方法
                 textoverwriter.command_delete(target_files)
 
-                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+                return jsonify({"status": "success", "message": "Command deletion operation completed successfully."})
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
             
@@ -384,7 +489,7 @@ def duplication_del():
                 # 调用 command_delete 方法
                 videooverwriter.command_delete(target_files)
 
-                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+                return jsonify({"status": "success", "message": "Command deletion operation completed successfully."})
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -399,7 +504,7 @@ def duplication_del():
                 # 调用 command_delete 方法
                 audiooverwriter.command_delete(target_files)
 
-                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+                return jsonify({"status": "success", "message": "Command deletion operation completed successfully."})
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
             
@@ -415,7 +520,7 @@ def duplication_del():
                 # 调用 command_delete 方法
                 imageoverwriter.command_delete(target_files)
 
-                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+                return jsonify({"status": "success", "message": "Command deletion operation completed successfully."})
             except Exception as e:
                 return jsonify({"status": "error", "message": str(e)}), 500
             
