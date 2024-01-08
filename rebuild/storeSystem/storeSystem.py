@@ -6,6 +6,10 @@ import os
 
 from overwirter_class import JsonOverwriter
 from overwirter_class import TextOverwriter
+from overwirter_class import VideoOverwriter
+from overwirter_class import AudioOverwriter
+from overwirter_class import ImageOverwriter
+
 
 
 app = Flask(__name__)
@@ -190,6 +194,7 @@ def get_key_storage_method():
 
 @app.route('/duplicationDel', methods=['POST'])
 def duplication_del():
+    print("---------开始对副本进行删除-------------")
     # 获取POST请求中的JSON数据
     data = request.json
     # 提取duplicationDelCommand命令
@@ -200,9 +205,12 @@ def duplication_del():
 
     # 分别解析各个字段
     target_files = duplication_del_command.get('target')
+    delete_alg=duplication_del_command.get('deleteAlg')
     delete_granularity = duplication_del_command.get('deleteGranularity', None)  # 如果字段不存在则返回None
     delete_alg_param = duplication_del_command.get('deleteAlgParam')
     delete_level = duplication_del_command.get('deleteLevel')
+    info_type=duplication_del_command.get('infoType')
+
 
     #计算vrf
     vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
@@ -210,25 +218,185 @@ def duplication_del():
     # 将二进制数据转换为 Base64 字符串
     base64_vrf_output = base64.b64encode(vrf_output)
     base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
-    print("使用以下VRF随机输出进行覆写副本文件:",base64_vrf_output_string)
 
 
-    # 执行覆写操作
-    try:
-        # overwrite_file(target_files, delete_granularity, base64_vrf_output_string, delete_level)
+    if delete_alg=="overwrittenDelete":
+        print("使用以下VRF随机输出进行覆写副本文件:",base64_vrf_output_string)
 
-        # 创建一个 JsonOverwriter 实例
-        jsonoverwriter = JsonOverwriter(granularity=delete_granularity, alg_param=base64_vrf_output_string, level=delete_level)
+        if info_type==1:
+            # 执行覆写操作
+            try:
+                # overwrite_file(target_files, delete_granularity, base64_vrf_output_string, delete_level)
 
-        # 调用 overwrite_file 方法
-        jsonoverwriter.overwrite_file(target_files)
+                # 创建一个 JsonOverwriter 实例
+                jsonoverwriter = JsonOverwriter(granularity=delete_granularity, alg_param=base64_vrf_output_string, level=delete_level)
 
-        return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+                # 调用 overwrite_file 方法
+                jsonoverwriter.overwrite_file(target_files)
+
+                print(f"已经完成对{target_files}的覆写")
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+        elif info_type==2:
+            # 执行覆写操作
+            try:
+                #对TXT进行覆写
+
+                # 创建一个 TextOverwriter 实例
+                textoverwriter = TextOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 overwrite_file 方法
+                textoverwriter.overwrite_file(target_files)
+
+                print(f"已经完成对{target_files}的覆写")
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+        elif info_type==3:
+            # 执行覆写操作
+            try:
+                #对Video进行覆写
+
+                # 创建一个 VideoOverwriter 实例
+                videooverwriter = VideoOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+
+                # 调用 overwrite_file 方法
+                videooverwriter.overwrite_file(target_files)
+
+                print(f"已经完成对{target_files}的覆写")
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
+        elif info_type==4:
+            # 执行覆写操作
+            try:
+                #对Audio进行覆写
+
+                # 创建一个 AudioOverwriter 实例
+                audiooverwriter = AudioOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 overwrite_file 方法
+                audiooverwriter.overwrite_file(target_files)
+
+                print(f"已经完成对{target_files}的覆写")
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+
+        elif info_type==5:
+            # 执行覆写操作
+            try:
+                #对Image进行覆写
+
+                # 创建一个 ImageOverwriter 实例
+                imageoverwriter = ImageOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 overwrite_file 方法
+                imageoverwriter.overwrite_file(target_files)
+
+                print(f"已经完成对{target_files}的覆写")
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+        else:
+            return jsonify({"status": "error", "message": "the infotype doesn't exists"}), 500
+    
+    elif delete_alg=="commandDelete":
+        print("使用系统命令执行副本删除")
+        if info_type==1:
+            # 执行命令删除操作
+            try:
+
+                # 创建一个 JsonOverwriter 实例
+                jsonoverwriter = JsonOverwriter(granularity=delete_granularity, alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 command_delete 方法
+                jsonoverwriter.command_delete(target_files)
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+        elif info_type==2:
+            # 执行命令删除操作
+            try:
+                #对TXT进行删除
+
+                # 创建一个 TextOverwriter 实例
+                textoverwriter = TextOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 command_delete 方法
+                textoverwriter.command_delete(target_files)
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+        elif info_type==3:
+            # 执行命令删除操作
+            try:
+                #对Video进行覆写
+
+                # 创建一个 VideoOverwriter 实例
+                videooverwriter = VideoOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 command_delete 方法
+                videooverwriter.command_delete(target_files)
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+
+        elif info_type==4:
+            # 执行命令删除操作
+            try:
+                #对Audio进行覆写
+
+                # 创建一个 AudioOverwriter 实例
+                audiooverwriter = AudioOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 command_delete 方法
+                audiooverwriter.command_delete(target_files)
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+
+        elif info_type==5:
+            # 执行命令删除操作
+            try:
+                #对Image进行覆写
+
+                # 创建一个 ImageOverwriter 实例
+                imageoverwriter = ImageOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+                # 调用 command_delete 方法
+                imageoverwriter.command_delete(target_files)
+
+                return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
+            except Exception as e:
+                return jsonify({"status": "error", "message": str(e)}), 500
+            
+        else:
+            return jsonify({"status": "error", "message": "the infotype doesn't exists"}), 500
+        
 
 @app.route('/keyDel', methods=['POST'])
 def key_del():
+    print("---------开始对密钥进行删除-------------")
     # 获取POST请求中的JSON数据
     data = request.json
 
@@ -242,6 +410,7 @@ def key_del():
     target_files = key_del_command.get('target')
     delete_alg_param = key_del_command.get('deleteAlgParam')
     delete_level = key_del_command.get('deleteLevel')
+    delete_alg=key_del_command.get('deleteAlg')
 
     #计算vrf
     vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
@@ -249,21 +418,41 @@ def key_del():
     # 将二进制数据转换为 Base64 字符串
     base64_vrf_output = base64.b64encode(vrf_output)
     base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
-    print("使用以下VRF随机输出进行覆写密钥文件:",base64_vrf_output_string)
+    
 
-    # 执行覆写操作
-    try:
-        # overwrite_key_file(target_files, base64_vrf_output_string, delete_level)
+    if delete_alg=="overwrittenDelete":
+        print("使用以下VRF随机输出进行覆写密钥文件:",base64_vrf_output_string)
 
-        # 创建一个 JsonOverwriter 实例
-        textoverwriter = TextOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+        # 执行覆写操作
+        try:
+            # overwrite_key_file(target_files, base64_vrf_output_string, delete_level)
 
-        # 调用 overwrite_file 方法
-        textoverwriter.overwrite_file(target_files)
+            # 创建一个 JsonOverwriter 实例
+            textoverwriter = TextOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
 
-        return jsonify({"status": "success", "message": "Key overwrite operation completed successfully."})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+            # 调用 overwrite_file 方法
+            textoverwriter.overwrite_file(target_files)
+
+            return jsonify({"status": "success", "message": "Key overwrite operation completed successfully."})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
+        
+    elif delete_alg=="commandDelete":
+        print("使用系统命令执行密钥删除")
+
+        # 执行覆写操作
+        try:
+            # overwrite_key_file(target_files, base64_vrf_output_string, delete_level)
+
+            # 创建一个 JsonOverwriter 实例
+            textoverwriter = TextOverwriter(alg_param=base64_vrf_output_string, level=delete_level)
+
+            # 调用 overwrite_file 方法
+            textoverwriter.command_delete(target_files)
+
+            return jsonify({"status": "success", "message": "Key overwrite operation completed successfully."})
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
 
 
 

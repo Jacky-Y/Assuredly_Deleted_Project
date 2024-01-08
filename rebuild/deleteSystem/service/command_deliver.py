@@ -365,10 +365,11 @@ def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelComm
     if not isinstance(duplicationDelCommand, dict):
         raise TypeError("duplicationDelCommand must be a dictionary")
 
-    # 检查 keyDelCommand 是否为字典类型
-    # keyDelCommand: 用于描述关键删除命令的字典，应包含必要的删除指令信息
-    if not isinstance(keyDelCommand, dict):
-        raise TypeError("keyDelCommand must be a dictionary")
+    
+    # 检查 key_locations 是否为列表或者 None
+    # keyDelCommand: 用于描述密钥删除命令的字典，应包含必要的删除指令信息
+    if not isinstance(keyDelCommand, list) and keyDelCommand is not None:
+        raise TypeError("keyDelCommand must be a list or None")
 
     # 检查 infoID 是否为字符串类型
     # infoID: 代表信息标识的字符串，用于唯一确定需要删除的数据项
@@ -413,7 +414,7 @@ def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelComm
         print("Response from duplication delete:", duplication_response)
 
     # 如果 keyDelCommand 不为空，则发送关键删除命令
-    if keyDelCommand["target"]:
+    if keyDelCommand:
         key_del_response = client.send_key_del_command(keyDelCommand)
         if key_del_response['status'] == 'error':
             print("Error during key delete:", key_del_response)
@@ -428,7 +429,10 @@ def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelComm
 
     # 生成删除命令字符串
     duplicationDelCommand_str = generate_delete_command_str(duplicationDelCommand)
-    keyDelCommand_str = generate_delete_command_str(keyDelCommand)
+    if keyDelCommand:
+        keyDelCommand_str = generate_delete_command_str(keyDelCommand)
+    else:
+        keyDelCommand_str ="no need for key deletion command"
 
     # 检查删除操作是否成功
     if final_status == "fail":

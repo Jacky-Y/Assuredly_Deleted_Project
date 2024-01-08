@@ -77,5 +77,11 @@
             "Education",
             "Hobbies"
         ]
+    },
+    {
+        "infoID": "12345",
+        "InfoTypes": [
+            "Video"
+        ]
     }
 ]

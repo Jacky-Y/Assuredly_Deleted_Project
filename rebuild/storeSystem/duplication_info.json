@@ -38,5 +38,9 @@
     {
         "infoID": "0c1d2e3f4g5h",
         "Locations": ["./c/0c1d2e3f4g5h.json", "./d/0c1d2e3f4g5h.json"]
+    },
+    {
+        "infoID": "12345",
+        "Locations": ["./e/12345.txt", "./f/12345.txt"]
     }
 ]

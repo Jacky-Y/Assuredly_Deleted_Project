@@ -38,5 +38,9 @@
     {
         "infoID": "0c1d2e3f4g5h",
         "Status": "Encrypted"
+    },
+    {
+        "infoID": "123456",
+        "Status": "Plaintext"
     }
 ]

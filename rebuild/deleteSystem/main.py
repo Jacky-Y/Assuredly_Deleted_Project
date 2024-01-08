@@ -53,6 +53,15 @@ from models.operation_log_model import OperationLogModel
 # 源域的确定性删除系统在完成收集所有来自其他域的确定性删除系统的删除结果之后，通过可视化的方式展示最终的删除结果，即是否所有域都按要求完成了删除
 
 
+# infoType 
+# json 1
+# txt 2
+# video 3
+# audio 4
+# image 5
+# other 6
+
+
 #定义全局变量
 node_statuses={}
 status_updated = False
@@ -79,6 +88,47 @@ def generate_delete_level(max_level):
         return 3
     else:
         return 1
+
+
+# 函数：get_file_type
+# 功能：根据文件列表中所有文件的统一扩展名返回对应的整数值
+# 输入：
+#    locations: list of str - 包含文件路径的字符串列表
+# 输出：
+#    int - 根据文件扩展名确定的文件类型对应的整数
+
+def get_file_type(locations):
+    # 如果提供的列表为空，返回 'other' 类型对应的整数 6
+    if not locations:
+        return 6
+
+    # 提取第一个文件的扩展名，并转换为小写以进行大小写不敏感的比较
+    file_extension = locations[0].split('.')[-1].lower()
+
+    # 定义文件类型与整数的对应关系
+    # 包括常见的视频、音频和图像文件类型
+    file_type_mapping = {
+        'json': 1,
+        'txt': 2,
+        'mp4': 3, 
+        'avi': 3, 
+        'mov': 3, 
+        'wmv': 3,  # 视频文件类型
+        'mp3': 4, 
+        'wav': 4, 
+        'aac': 4, 
+        'flac': 4,  # 音频文件类型
+        'jpg': 5, 
+        'jpeg': 5, 
+        'png': 5, 
+        'gif': 5, 
+        'bmp': 5,  # 图像文件类型
+    }
+
+    # 返回对应的整数，如果类型不在映射中，则返回 'other' 类型对应的整数
+    return file_type_mapping.get(file_extension, 6)
+
+
 
 
 # 函数：generate_delete_command_str
@@ -479,19 +529,28 @@ def get_instruction():
         print(f"Locations for infoID {infoID}: {locations}")
         print(f"Key locations for infoID {infoID}: {key_locations}")
 
+        infoType=get_file_type(locations)
+
 
 #########################删除命令生成#########################
         print("\n------------------------------")
         print("Delete Commands")
         print("------------------------------")
 
-        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod)
+        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType)
 
         duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
-        keyDelCommand_str=generate_delete_command_str(keyDelCommand)
-
         print(f"Duplication Delete Command: {duplicationDelCommand_str}")
-        print(f"Key Delete Command: {keyDelCommand_str}")
+
+
+        if keyDelCommand:
+            #如果keyDelCommand存在的话
+            keyDelCommand_str=generate_delete_command_str(keyDelCommand)
+            print(f"Key Delete Command: {keyDelCommand_str}")
+        else:
+            #如果keyDelCommand不存在
+            keyDelCommand_str="no need for key deletion command"
+            print("The information is plaintext, there is no key deletion command")
 
 
 #########################删除命令发送#########################

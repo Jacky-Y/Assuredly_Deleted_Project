@@ -31,7 +31,7 @@ def generate_delete_level(max_level):
 # 输出：
 #    tuple - 包含两个字典，分别代表普通数据和密钥的删除命令。
 
-def generate_delete_commands(store_system_port, max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod):
+def generate_delete_commands(store_system_port, max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType):
         # 检查 store_system_port 是否为整数
     if not isinstance(store_system_port, int):
         raise TypeError("store_system_port must be an integer")
@@ -48,9 +48,10 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
     if not isinstance(locations, list):
         raise TypeError("locations must be a list")
 
-    # 检查 key_locations 是否为列表
-    if not isinstance(key_locations, list):
-        raise TypeError("key_locations must be a list")
+    # 检查 key_locations 是否为列表或者 None
+    if not isinstance(key_locations, list) and key_locations is not None:
+        raise TypeError("key_locations must be a list or None")
+
 
     # 检查 deleteGranularity 是否为字符串
     if not isinstance(deleteGranularity, str):
@@ -59,6 +60,10 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
     # 检查 deleteMethod 是否为字符串
     if not isinstance(deleteMethod, str):
         raise TypeError("deleteMethod must be a string")
+    
+    # 检查 infoType 是否为字符串
+    if not isinstance(infoType, int):
+        raise TypeError("infoType must be a int")
 
 
     # 根据最高信息级别生成删除级别
@@ -78,7 +83,9 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
         # 指定删除算法的参数
         "deleteAlgParam": deleteAlgParam,        
         # 指定删除操作的级别
-        "deleteLevel": deleteLevel               
+        "deleteLevel": deleteLevel,
+        # 指定信息类型
+        "infoType": infoType,   
     }
 
     # 构造关键数据的删除命令
@@ -92,6 +99,9 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
         # 指定删除操作的级别
         "deleteLevel": deleteLevel                
     }
+
+    if key_locations==None:
+        keyDelCommand = None
 
     # 返回构造的普通数据和关键数据的删除命令
     return duplicationDelCommand, keyDelCommand

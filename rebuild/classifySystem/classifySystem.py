@@ -397,6 +397,22 @@ def query_info():
     {
         "InfoType": "Social Media Profiles",
         "InfoLevel": 2
+    },
+    {
+        "InfoType": "Video",
+        "InfoLevel": 4
+    },
+    {
+        "InfoType": "Audio",
+        "InfoLevel": 3
+    },
+    {
+        "InfoType": "Image",
+        "InfoLevel": 2
+    },
+    {
+        "InfoType": "Text",
+        "InfoLevel": 2
     }
 
 ]

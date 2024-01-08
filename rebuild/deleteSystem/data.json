@@ -5,7 +5,7 @@
     "data": {
         "affairsID": "16881233",
         "userID": "u100000003",
-        "infoID": "0c1d2e3f4g5h",
+        "infoID": "12345",
         "deleteMethod": "overwrittenDelete",
         "deleteGranularity": "",
         "deleteNotifyTree":"{\"b1000\": {\"children\": []}}"

@@ -36,6 +36,8 @@ class JsonOverwriter:
             for _ in range(self.level):
                 try:
                     self._process_file(file_path)
+
+                    #print(f"已经完成对{file_path}的覆写")
                 except Exception as e:
                     self.log(f"Error processing file {file_path}: {e}", "ERROR")
                     raise
@@ -281,6 +283,8 @@ class TextOverwriter:
             for _ in range(self.level):
                 try:
                     self._process_file(file_path)
+
+                    #print(f"已经完成对{file_path}的覆写")
                 except FileNotFoundError as e:
                     self.log(f"File not found: {file_path}", "ERROR")
                 except IOError as e:
@@ -597,6 +601,8 @@ class VideoOverwriter:
             for _ in range(self.level):
                 try:
                     self._process_file(file_path)
+
+                    #print(f"已经完成对{file_path}的覆写")
                 except FileNotFoundError as e:
                     self.log(f"File not found: {file_path}", "ERROR")
                 except IOError as e:
@@ -868,7 +874,10 @@ class AudioOverwriter:
         for file_path in target_files:
             for _ in range(self.level):
                 try:
+                    
                     self._process_file(file_path)
+
+                    #print(f"已经完成对{file_path}的覆写")
                 except FileNotFoundError as e:
                     self.log(f"File not found: {file_path}", "ERROR")
                 except IOError as e:
@@ -1140,6 +1149,8 @@ class ImageOverwriter:
             for _ in range(self.level):
                 try:
                     self._process_file(file_path)
+
+                    #print(f"已经完成对{file_path}的覆写")
                 except FileNotFoundError as e:
                     self.log(f"File not found: {file_path}", "ERROR")
                 except IOError as e:
