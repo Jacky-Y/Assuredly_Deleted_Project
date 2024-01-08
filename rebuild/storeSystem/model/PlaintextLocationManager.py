@@ -2,9 +2,10 @@ import mysql.connector
 from mysql.connector import Error
 import json
 
-class PlaintextLocation:
+class PlaintextLocationManager:
     def __init__(self, db_config):
         """初始化时连接到数据库，并检查表是否存在，如果不存在则创建"""
+        self._json_data = None  # 私有变量，用于存储从 JSON 文件读取的数据
         self.db_config = db_config
         self.connection = None
         try:
@@ -90,6 +91,22 @@ class PlaintextLocation:
         except Error as e:
             print(f"Error retrieving record: {e}")
             return []  # 在发生异常时返回空列表
+        
+    def load_json(self, file_path):
+        """从给定路径读取 JSON 文件并存储到私有变量"""
+        try:
+            with open(file_path, 'r') as file:
+                self._json_data = json.load(file)
+        except Exception as e:
+            print(f"Error reading JSON file: {e}")
+
+    def get_info_from_json(self, infoID):
+        """根据 infoID 从加载的 JSON 数据中获取信息"""
+        if self._json_data is None:
+            print("JSON data is not loaded.")
+            return None
+
+        return self._json_data.get(infoID)
 
 
 
@@ -137,7 +154,7 @@ if __name__=="__main__":
     }
 
     # 创建 PlaintextLocation 实例
-    pl = PlaintextLocation(db_config)
+    pl = PlaintextLocationManager(db_config)
 
     # 遍历数据并添加到数据库
     for item in data:

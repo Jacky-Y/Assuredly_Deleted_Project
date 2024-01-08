@@ -542,8 +542,9 @@ if __name__=="__main__":
 
 
     #############查###############
-    # temp=db_model.get_records_by_infoID_affairsID('0c1d2e3f4g5h','16881233')
-    # print(temp)
+    temp=db_model.get_records_by_infoID_affairsID('0c1d2e3f4g5h','16881233')
+    data = db_model.format_log(temp)
+    print(data)
 
 
     # x=db_model.get_records_by_infoID('0c1d2e3f4g5h')

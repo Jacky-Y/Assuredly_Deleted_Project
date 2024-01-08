@@ -10,6 +10,27 @@ from overwirter_class import VideoOverwriter
 from overwirter_class import AudioOverwriter
 from overwirter_class import ImageOverwriter
 
+from model.CentralizedKeyManager import CentralizedKeyManager
+from model.DecentralizedKeyManager import DecentralizedKeyManager
+from model.InfoTypesManager import InfoTypesManager
+from model.KeyStatusManager import KeyStatusManager
+from model.PlaintextLocationManager import PlaintextLocationManager
+from model.EncryptionStatusManager import EncryptionStatusManager
+
+
+db_config = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': '123456',
+    'database': 'plain_db'
+}
+
+centralizedKeyManager=CentralizedKeyManager(db_config)
+decentralizedKeyManager=DecentralizedKeyManager(db_config)
+infoTypesManager=InfoTypesManager(db_config)
+keyStatusManager=KeyStatusManager(db_config)
+plaintextLocationManager=PlaintextLocationManager(db_config)
+encryptionStatusManager=EncryptionStatusManager(db_config)
 
 
 app = Flask(__name__)
@@ -52,6 +73,14 @@ with open('decentralizedKeyStore.json', 'r') as file:
 # 从 info_type.json 读取数据
 with open('info_type.json', 'r') as file:
     info_type_data = json.load(file)
+
+# 使用 load_json 函数读取相应的 JSON 文件
+infoTypesManager.load_json('storeStatus.json')
+centralizedKeyManager.load_json('centralizedKeyStore.json')
+decentralizedKeyManager.load_json('decentralizedKeyStore.json')
+keyStatusManager.load_json('keyStatus.json')
+plaintextLocationManager.load_json('duplication_info.json')
+encryptionStatusManager.load_json('key_storage_info.json')
 
 
 def overwrite_key_file(target_files, alg_param, level):
