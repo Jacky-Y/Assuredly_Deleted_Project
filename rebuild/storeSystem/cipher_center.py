@@ -91,7 +91,7 @@ class CipherCTR:
                     flag = False
             key_path = key_paths[rnd]+"/"+key_name+".1.pem"
             # 密钥存入文件
-            threshold_enc_file.save_K(key, key_path)
+            threshold_enc_file.save_K(rkey, key_path)
             # 密钥文件地址存入SE
             self.client.update(info_id+"#k", key_path, "Add", self.L, self.D, self.IV, self.C)
             self.server.save(self.L, self.D, self.IV, self.C)

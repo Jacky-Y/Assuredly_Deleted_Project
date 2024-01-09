@@ -1,6 +1,7 @@
 import mysql.connector
 from mysql.connector import Error
 import json
+import ast
 
 class InfoTypesManager:
     def __init__(self, db_config):
@@ -84,7 +85,8 @@ class InfoTypesManager:
             result = cursor.fetchone()
             if result:
                 # 解析 JSON 字符串为列表并返回
-                return json.loads(result[0])
+                result = json.loads(result[0])
+                return  result
             else:
                 return None  # 如果没有找到记录，返回 None
         except Error as e:
@@ -136,16 +138,16 @@ if __name__=="__main__":
     # itm.delete_record("1a2b3c4d5e6f")
 
     # 读取记录
-    record = itm.read_record("1a2b3c4d5e6f")
+    record = itm.get_infoTypes("0003bada1d72b304")
     print(record)
     print(type(record))
 
 
     #直接获取列表
     # 获取特定 infoID 的 infoTypes 列表
-    infoTypes_list = itm.get_infoTypes("1a2b3c4d5e6f")
-    print(infoTypes_list)
-    print(type(infoTypes_list))
+    # infoTypes_list = itm.get_infoTypes("0364ae455c6f00cd")
+    # print(infoTypes_list)
+    # print(type(infoTypes_list))
 
-    # 关闭数据库连接
-    itm.close_connection()
+    # # 关闭数据库连接
+    # itm.close_connection()

@@ -12,13 +12,15 @@ class SEClient:
         self.s = bytearray(16)
         self.count = {}
         self.isSave = isSave
+        self.isLoad = isLoad
 
         self.setup(isLoad)
 
     # 销毁类的析构函数
     def __del__(self):
         if self.isSave is True:
-            self.save_K()
+            if self.isLoad is False:
+                self.save_K()
             self.save_State()
 
         for it in self.count:
@@ -46,40 +48,42 @@ class SEClient:
             self.k_sm4 = data[:16]
             self.s = data[16:]
         except Exception as e:
-            print("文件打开失败：", str(e))
+            print(path,"文件打开失败：", str(e))
         finally:
             fw.close()
 
     # 存储当前密钥
     def save_K(self, path="./se_key.pem"):
         if path == "./se_key.pem":
-            with open(path, "wb") as fw:
-                fw.write(self.k_sm4)
-                fw.write(self.s)
+            fw = os.open(path, os.O_WRONLY|os.O_CREAT)
+            os.write(fw, self.k_sm4)
+            os.write(fw, self.s)
+            os.close(fw)
         else:
             try:
-                fw = open(path, "wb")
-                fw.write(self.k_sm4)
-                fw.write(self.s)
+                fw = os.open(path, os.O_WRONLY|os.O_CREAT)
+                os.write(fw, self.k_sm4)
+                os.write(fw, self.s)
             except Exception as e:
                 print("文件打开失败：", str(e))
             finally:
-                fw.close()
+                os.close(fw)
 
     # 存储当前本地状态
     def save_State(self, path="./local_state.json"):
         json_str = json.dumps(self.count)
         if path == "./local_state.json":
-            with open(path, "w") as fw:
-                fw.write(json_str)
+            fw = os.open(path, os.O_WRONLY|os.O_CREAT)
+            os.write(fw, json_str.encode())
+            os.close(fw)
         else:
             try:
-                fw = open(path, "w")
-                fw.write(json_str)
+                fw = os.open(path, os.O_WRONLY|os.O_CREAT)
+                os.write(fw, json_str.encode())
             except Exception as e:
                 print("文件打开失败：", str(e))
             finally:
-                fw.close()
+                os.close(fw)
 
     # 装载本地状态
     def load_State(self, path="./local_state.json"):
@@ -87,7 +91,7 @@ class SEClient:
             fw = open(path, "r")
             self.count = json.load(fw)
         except Exception as e:
-            print("文件打开失败：", str(e))
+            print(path,"文件打开失败：", str(e))
         finally:
             fw.close()
 
@@ -591,7 +595,7 @@ class CryptSM4(object):
 # 调试样例
 # 正确输出为：Decrypted result: [b'/Users/xx/xx/xx/xx/xx/xx/xx/xx.json', b'/Users/xx/xx/xx/xx/xx/xx/xx/xx.json']
 if __name__ == "__main__":
-    client = SEClient()
+    client = SEClient(isLoad=True,isSave=True)
     # client.setup()
 
     L = bytearray(32)

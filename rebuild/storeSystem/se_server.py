@@ -3,6 +3,7 @@ from typing import List, Dict, Union
 import pymysql
 from math import ceil
 import binascii
+import json
 
 class SECipher:
     # SSE的密文结构
@@ -22,6 +23,7 @@ class SEServer:
         # 创建连接对象
         try:
             self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
+            # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
             print("成功连接到MySQL服务器！")
         except Exception as e:
             print("无法连接到MySQL服务器：", str(e))
@@ -43,7 +45,7 @@ class SEServer:
         if self.conn.open:
             self.conn.close()
 
-    # 清空mysql的EDB
+    # 清空mysql的EDB包括cipher和group两张表
     # 存在就删除，不存在不做
     def drop_edb(self):
         # 判断数据库edb是否存在
@@ -104,19 +106,33 @@ class SEServer:
         self.conn.commit()
         result = self.cursor.fetchone()
 
-        if result is not None:
-            return 0
+        if result is None:
+            # 创建EDB的cipher部分，条目L，D，C
+            try:
+                sql = '''CREATE TABLE cipher (
+                                L VARCHAR(64) PRIMARY KEY,
+                                D TEXT,
+                                C TEXT)'''
+                self.cursor.execute(sql)
+                self.conn.commit()
+            except Exception as e:
+                print("创建表格时发生错误:", str(e))
 
-        # 创建EDB部分，条目L，D，C
-        try:
-            sql = '''CREATE TABLE cipher (
-                            L VARCHAR(64) PRIMARY KEY,
-                            D TEXT,
-                            C TEXT)'''
-            self.cursor.execute(sql)
-            self.conn.commit()
-        except Exception as e:
-            print("创建表格时发生错误:", str(e))
+        sql = "SHOW TABLES LIKE 'grp'"
+        self.cursor.execute(sql)
+        self.conn.commit()
+        result = self.cursor.fetchone()
+
+        if result is None:
+            # 创建EDB的group部分，条目Iw，{X，C}
+            try:
+                sql = '''CREATE TABLE grp (
+                                Iw VARCHAR(64) PRIMARY KEY,
+                                Cw LONGTEXT)'''
+                self.cursor.execute(sql)
+                self.conn.commit()
+            except Exception as e:
+                print("创建表格时发生错误:", str(e))
 
         return 1
 
@@ -131,25 +147,20 @@ class SEServer:
         # _l_grp = bytes(loc_grp)
         # grp = self.GRP.get(_l_grp, {})
 
-        grp_name = loc_grp.hex()[4:64]
+        grp_name = loc_grp.hex()
 
-        sql = f"SHOW TABLES LIKE \"\'{grp_name}\'\""
+        sql = f"SELECT * FROM grp WHERE Iw='{grp_name}'"
         self.cursor.execute(sql)
-        grp_is = self.cursor.fetchone()
+        result = self.cursor.fetchone()
 
-        if grp_is is None:
-            try:
-                # 删除原有表格（如果存在）
-                # cursor.execute(f"DROP TABLE IF EXISTS {grp_name}")
-
-                # 创建新表格
-                create_query = f'''CREATE TABLE `'{grp_name}'` (
-                                            id INT AUTO_INCREMENT PRIMARY KEY, 
-                                            X TEXT, 
-                                            C TEXT)'''
-                self.cursor.execute(create_query)
-            except Exception as e:
-                print('Error occurred while creating table: ', str(e))
+        if result is None:
+            _grp = {}
+            sql = f"INSERT INTO grp (Iw,Cw) VALUES ('{grp_name}', '')"
+            self.cursor.execute(sql)
+            self.conn.commit()
+        else:
+            # print(result)
+            _grp = json.loads(result[1])
 
         for i in range(cnt_upd, 0, -1):
             self._hash_H(K, i, buf)
@@ -167,7 +178,7 @@ class SEServer:
             row = self.cursor.fetchone()
 
             if row is None:
-                print("l is not in cipher_db")
+                print("ERROR: l is not in cipher_db")
                 return 0
 
             _D = bytes.fromhex(row[1])
@@ -185,15 +196,10 @@ class SEServer:
                 _X = _l1.hex()
                 D.add(_l1)
                 # grp.pop(_l1, None)
-                sql = f"SELECT * FROM `'{grp_name}'` WHERE X='{_X}'"
-                self.cursor.execute(sql)
-                row = self.cursor.fetchone()
 
                 # 删除grp中对应内容，如果存在
-                if row is not None:
-                    sql = f"DELETE FROM `'{grp_name}'` WHERE X='{_X}'"
-                    self.cursor.execute(sql)
-                self.conn.commit()
+                if _X in _grp.keys():
+                    del _grp[_X]
             elif H_rslt[0] == 0xff:
                 # add 记录上次搜索后的有效密文
                 _l1 = bytes(H_rslt[1:32])
@@ -214,27 +220,28 @@ class SEServer:
             self.cursor.execute(sql)
             self.conn.commit()
 
+
         # group中剩余密文为有效结果
         # for it in grp.values():
         #     ret.append(it)
-        sql = f"SELECT * FROM `'{grp_name}'`"
-        self.cursor.execute(sql)
-        result = self.cursor.fetchall()
-        for grp_row in result:
-            data_row = bytes.fromhex(grp_row[2])
-            ret.append(data_row)
+        for _x,_c in _grp.items():
+            _c_out = bytes.fromhex(_c)
+            ret.append(_c_out)
 
         # 更新group，有效结果还包含上次搜索后的密文
         for _x,_c in T:
             _c_out = bytes.fromhex(_c)
             ret.append(_c_out)
-            sql = f"INSERT INTO `'{grp_name}'` (X,C) VALUES ('{_x}','{_c}')"
-            self.cursor.execute(sql)
+            # 添加本次查询到group
+            _grp[_x] = _c
             # _l = it.D[:31]
             # buf[:16] = it.IV[:]
             # buf[16:] = it.C[:]
             # ret.append(buf)
             # grp[_l] = buf
+        n_grp = json.dumps(_grp)
+        sql = f"UPDATE grp SET Cw='{n_grp}' WHERE Iw='{grp_name}'"
+        self.cursor.execute(sql)
         self.conn.commit()
 
         for it in T:

@@ -34,7 +34,7 @@ infoTypesManager=InfoTypesManager(db_config)
 # keyStatusManager=KeyStatusManager(db_config)
 plaintextLocationManager=PlaintextLocationManager(db_config)
 encryptionStatusManager=EncryptionStatusManager(db_config)
-ciphercenter = cipher_center.CipherCTR()
+ciphercenter = cipher_center.CipherCTR(True,True,False)
 
 #  # 两处副本目录
 # copy_paths = ["./c", "./e"]
@@ -43,7 +43,7 @@ ciphercenter = cipher_center.CipherCTR()
 
 # # 确保预置测试文件存在
 # # 拷贝一份，作为本系统输入明文文件
-# file_in = "./0c1d2e3f4g5h.json"
+# file_in = "./1.png"
 
 # if os.path.exists('./test_sample.json'):
 #     shutil.copy('./test_sample.json', file_in)
@@ -102,16 +102,16 @@ def copy_and_delete_file(original_file_path, locations, new_name=None):
 
 def get_keys_from_json(file_path):
     """
-    This function reads a JSON file from the given file path and returns a list of all keys.
+    This function reads a JSON file from the given file path and returns a list of keys with non-empty values.
 
     :param file_path: The path to the JSON file.
-    :return: A list of keys from the JSON file.
+    :return: A list of keys with non-empty values from the JSON file.
     """
     try:
         with open(file_path, 'r') as file:
             data = json.load(file)
-            keys = list(data.keys())
-            return keys
+            non_empty_keys = [key for key, value in data.items() if value]
+            return non_empty_keys
     except Exception as e:
         return f"Error: {e}"
     
@@ -298,10 +298,14 @@ def get_info_type():
     if not infoID:
         return jsonify({'error': 'infoID not provided'}), 400
 
-    # 在 info_type_data 中查找 infoID
-    for item in info_type_data:
-        if item["infoID"] == infoID:
-            return jsonify({'InfoTypes': item['InfoTypes']}), 200
+    infoTypes=infoTypesManager.get_infoTypes(infoID)
+    if infoTypes:
+        return jsonify({'InfoTypes': infoTypes}), 200
+
+    # # 在 info_type_data 中查找 infoID
+    # for item in info_type_data:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({'InfoTypes': item['InfoTypes']}), 200
 
     # 如果没找到匹配的 infoID，则返回错误
     return jsonify({'error': 'infoID not found'}), 404
@@ -347,12 +351,20 @@ def get_decentralized_key():
 def get_status():
     data = request.json
     infoID = data.get("infoID", "")
-    for item in info_status:
-        if item["infoID"] == infoID:
-            return jsonify({"infoID": infoID, "Status": item["Status"]})
+    isencrypted=encryptionStatusManager.get_encryption_status(infoID)
+    if isencrypted==1:
+        return jsonify({"infoID": infoID, "Status": "Encrypted"})
+    elif isencrypted==0:
+        return jsonify({"infoID": infoID, "Status": "Plaintext"})
+    else:
+        return jsonify({"Error": "infoID not found"}), 404
+
+    # for item in info_status:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({"infoID": infoID, "Status": item["Status"]})
 
     # If infoID does not exist in the list
-    return jsonify({"Error": "infoID not found"}), 404
+    
 
 @app.route('/getEncDuplicationLocations', methods=['POST'])
 def get_enc_duplication_locations():
@@ -378,12 +390,18 @@ def get_enc_duplication_locations():
 def get_duplication_locations():
     data = request.json
     infoID = data.get("infoID", "")
-    for item in duplication_info:
-        if item["infoID"] == infoID:
-            return jsonify({"infoID": infoID, "Locations": item["Locations"]})
+    locations=plaintextLocationManager.get_locations_list(infoID)
+    if locations:
+        return jsonify({"infoID": infoID, "Locations": locations})
+    
+    return jsonify({"Error": "infoID not found"}), 404
+
+    # for item in duplication_info:
+    #     if item["infoID"] == infoID:
+    #         return jsonify({"infoID": infoID, "Locations": item["Locations"]})
 
     # If infoID does not exist in the list
-    return jsonify({"Error": "infoID not found"}), 404
+    
 
 @app.route('/getKeyStorageMethod', methods=['POST'])
 def get_key_storage_method():

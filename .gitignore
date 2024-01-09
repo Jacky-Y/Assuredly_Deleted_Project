@@ -4,6 +4,7 @@ rebuild/storeSystem/c/*
 rebuild/storeSystem/d/*
 rebuild/storeSystem/e/*
 rebuild/storeSystem/f/*
+rebuild/storeSystem/testdata/*
 !rebuild/storeSystem/c/.gitkeep
 !rebuild/storeSystem/d/.gitkeep
 !rebuild/storeSystem/e/.gitkeep

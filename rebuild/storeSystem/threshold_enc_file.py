@@ -351,7 +351,7 @@ def file_enc(key, path, path_set):
     finally:
         fr.close()
         # 原文件删除 ***删除操作***
-        os.remove(path)
+        #os.remove(path)
         return epath_set
 
 # 文件解密
