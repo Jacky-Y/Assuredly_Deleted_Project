@@ -203,7 +203,7 @@ class StorageSystemClient:
     #   dict - 服务器的响应
 
 
-    def send_dup_del_command(self, duplication_del_command):
+    def send_dup_del_command(self, duplication_del_command,status):
         """
         发送副本删除命令。
 
@@ -212,8 +212,11 @@ class StorageSystemClient:
         :param duplication_del_command: dict - 包含副本删除命令信息的字典
         :return: dict - 服务器的响应，包括状态和消息
         """
-        # 构建请求的完整URL
-        url = f"{self.base_url}/duplicationDel"
+        if status=="Plaintext":
+            # 构建请求的完整URL
+            url = f"{self.base_url}/duplicationDel"
+        elif status=="Encrypted":
+            url = f"{self.base_url}/duplicationEncDel"
 
         # 验证 duplication_del_command 是否为字典
         if not isinstance(duplication_del_command, dict):
@@ -353,7 +356,7 @@ class TimeoutException(Exception):
         super().__init__(message)
         self.error_data = error_data
 
-def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds):
+def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,status):
     # 参数类型检查
     # 检查 store_system_port 是否为整数类型
     # store_system_port: 存储系统的端口号，应为整数类型
@@ -368,8 +371,8 @@ def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelComm
     
     # 检查 key_locations 是否为列表或者 None
     # keyDelCommand: 用于描述密钥删除命令的字典，应包含必要的删除指令信息
-    if not isinstance(keyDelCommand, list) and keyDelCommand is not None:
-        raise TypeError("keyDelCommand must be a list or None")
+    if not isinstance(keyDelCommand, dict) and keyDelCommand is not None:
+        raise TypeError("keyDelCommand must be a dict or None")
 
     # 检查 infoID 是否为字符串类型
     # infoID: 代表信息标识的字符串，用于唯一确定需要删除的数据项
@@ -406,23 +409,23 @@ def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelComm
     client = StorageSystemClient(f"http://127.0.0.1:{store_system_port}")
 
     # 发送重复删除命令并处理响应
-    duplication_response = client.send_dup_del_command(duplicationDelCommand)
+    duplication_response = client.send_dup_del_command(duplicationDelCommand,status)
     if duplication_response['status'] == 'error':
         print("Error during duplication delete:", duplication_response)
         final_status = "fail"
     else:
         print("Response from duplication delete:", duplication_response)
 
-    # 如果 keyDelCommand 不为空，则发送关键删除命令
-    if keyDelCommand:
-        key_del_response = client.send_key_del_command(keyDelCommand)
-        if key_del_response['status'] == 'error':
-            print("Error during key delete:", key_del_response)
-            final_status = "fail"
-        else:
-            print("Response from key delete:", key_del_response)
-    else:
-        print("Not encrypted, no need to delete key")
+    # # 如果 keyDelCommand 不为空，则发送密钥删除命令
+    # if keyDelCommand:
+    #     key_del_response = client.send_key_del_command(keyDelCommand)
+    #     if key_del_response['status'] == 'error':
+    #         print("Error during key delete:", key_del_response)
+    #         final_status = "fail"
+    #     else:
+    #         print("Response from key delete:", key_del_response)
+    # else:
+    #     print("Not encrypted, no need to delete key")
 
     # 格式化删除执行时间
     deletePerformTime = datetime.now().strftime('%Y-%m-%d %H:%M:%S')

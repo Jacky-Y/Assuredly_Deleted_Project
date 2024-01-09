@@ -173,6 +173,8 @@ class CipherCTR:
         self.client.decrypt(ebuf,fpath)
         ebuf.clear()
 
+        return fpath
+
     # 用户根据关键字查找对应文件
     # 输入一个关键字
     # 返回对应文件，解密为明文

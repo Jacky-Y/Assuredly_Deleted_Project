@@ -68,17 +68,32 @@ class StorageSystemClient:
     #   infoID: str - 信息的唯一标识符
     # 输出：
     #   list - 信息副本的位置列表
-    def get_duplication_locations(self, infoID):
+    def get_duplication_locations(self, infoID,status):
         try:
-            # 调用内部方法 _post_request 发送请求并获取响应
-            json_data = self._post_request("getDuplicationLocations", infoID)
+            if status=="Plaintext":
+                # 调用内部方法 _post_request 发送请求并获取响应
+                json_data = self._post_request("getDuplicationLocations", infoID)
 
-            # 检查响应数据是否含有 'Locations' 字段
-            if "Locations" in json_data:
-                return json_data.get("Locations")
-            else:
-                # 如果响应数据中没有 'Locations' 字段，返回错误信息
-                return "Error: 'Locations' not found in response"
+                # 检查响应数据是否含有 'Locations' 字段
+                if "Locations" in json_data:
+                    return json_data.get("Locations")
+                else:
+                    # 如果响应数据中没有 'Locations' 字段，返回错误信息
+                    return "Error: 'Locations' not found in response"
+                
+
+            elif status=="Encrypted":
+                # 调用内部方法 _post_request 发送请求并获取响应
+                json_data = self._post_request("getEncDuplicationLocations", infoID)
+
+                # 检查响应数据是否含有 'Locations' 字段
+                if "Locations" in json_data:
+                    return json_data.get("Locations")
+                else:
+                    # 如果响应数据中没有 'Locations' 字段，返回错误信息
+                    return "Error: 'Locations' not found in response"
+                
+
         except requests.exceptions.HTTPError as http_err:
             # 捕获HTTP错误异常，并返回错误信息
             return f"HTTP error occurred: {http_err}"
@@ -336,7 +351,7 @@ def query_data_and_key_locations(infoID, store_system_port):
             raise DataServiceError(f"Failed to retrieve storage status for infoID {infoID}.")
 
         # 查询infoID的副本位置信息
-        locations = client.get_duplication_locations(infoID)
+        locations = client.get_duplication_locations(infoID,status)
         if not locations:
             # 如果未找到副本位置信息，则设置为None
             locations = None
@@ -359,7 +374,7 @@ def query_data_and_key_locations(infoID, store_system_port):
                 # 如果未找到密钥位置信息，则设置为None
                 key_locations = None
 
-        return locations, key_locations
+        return locations, key_locations,status
 
     except DataServiceError as e:
         # 捕获自定义的DataServiceError并向外部抛出

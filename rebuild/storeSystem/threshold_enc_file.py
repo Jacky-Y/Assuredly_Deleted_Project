@@ -401,9 +401,11 @@ def del_file(path, del_method, vrf, level):
     overwriter=VideoOverwriter(vrf, level)
     if del_method=="overwrittenDelete":
         overwriter.overwrite_file([path])
+        print(f"已经完成对{path}的覆写")
 
     elif del_method=="commandDelete":
         overwriter.command_delete([path])
+        print(f"已经完成对{path}的删除")
         # other delete method
 
 # 更新密文文件字段

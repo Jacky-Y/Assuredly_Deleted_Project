@@ -3,6 +3,8 @@ import json
 from util import *
 import base64
 import os
+import shutil
+import random
 
 from overwirter_class import JsonOverwriter
 from overwirter_class import TextOverwriter
@@ -10,10 +12,10 @@ from overwirter_class import VideoOverwriter
 from overwirter_class import AudioOverwriter
 from overwirter_class import ImageOverwriter
 
-from model.CentralizedKeyManager import CentralizedKeyManager
-from model.DecentralizedKeyManager import DecentralizedKeyManager
+# from model.CentralizedKeyManager import CentralizedKeyManager
+# from model.DecentralizedKeyManager import DecentralizedKeyManager
 from model.InfoTypesManager import InfoTypesManager
-from model.KeyStatusManager import KeyStatusManager
+# from model.KeyStatusManager import KeyStatusManager
 from model.PlaintextLocationManager import PlaintextLocationManager
 from model.EncryptionStatusManager import EncryptionStatusManager
 import cipher_center
@@ -26,16 +28,153 @@ db_config = {
     'database': 'plain_db'
 }
 
-centralizedKeyManager=CentralizedKeyManager(db_config)
-decentralizedKeyManager=DecentralizedKeyManager(db_config)
+# centralizedKeyManager=CentralizedKeyManager(db_config)
+# decentralizedKeyManager=DecentralizedKeyManager(db_config)
 infoTypesManager=InfoTypesManager(db_config)
-keyStatusManager=KeyStatusManager(db_config)
+# keyStatusManager=KeyStatusManager(db_config)
 plaintextLocationManager=PlaintextLocationManager(db_config)
 encryptionStatusManager=EncryptionStatusManager(db_config)
 ciphercenter = cipher_center.CipherCTR()
 
+#  # 两处副本目录
+# copy_paths = ["./c", "./e"]
+# # 输入关键字集合
+# keywords = ["Male"]
+
+# # 确保预置测试文件存在
+# # 拷贝一份，作为本系统输入明文文件
+# file_in = "./0c1d2e3f4g5h.json"
+
+# if os.path.exists('./test_sample.json'):
+#     shutil.copy('./test_sample.json', file_in)
+# else:
+#     print("请准备'./test_sample.json'文件！")
+#     sys.exit(1)
+# print("输入文件./9w0x1y2z3a4b.json生成成功！")
+
+# # 添加文件，关键字Male，门限(2,3)
+# ciphercenter.add_file(keywords, file_in, "0c1d2e3f4g5h", copy_paths, 2, 3)
+
 
 app = Flask(__name__)
+
+
+def copy_and_delete_file(original_file_path, locations, new_name=None):
+    """
+    Copy a file to randomly selected locations and delete the original file,
+    using Linux-style paths with forward slashes.
+
+    :param original_file_path: Path to the original file.
+    :param locations: List of possible destination locations.
+    :param new_name: New name for the file after being copied. If None, original file name is used.
+    :return: List of new file paths where the file has been copied.
+    """
+    if not os.path.exists(original_file_path):
+        return "Original file does not exist."
+
+    if not locations:
+        return "No destination locations provided."
+
+    # 随机选择位置数量
+    num_locations_to_use = random.randint(1, len(locations))
+    selected_locations = random.sample(locations, num_locations_to_use)
+
+    new_file_paths = []
+    for location in selected_locations:
+        if not os.path.exists(os.path.dirname(location)):
+            os.makedirs(os.path.dirname(location))
+
+        # Determine the new file name
+        if new_name:
+            base, ext = os.path.splitext(original_file_path)
+            new_file_name = f"{new_name}{ext}"
+        else:
+            new_file_name = os.path.basename(original_file_path)
+
+        # Construct the new file path
+        new_file_path = os.path.join(location, new_file_name).replace('\\', '/')
+        shutil.copy2(original_file_path, new_file_path)
+        new_file_paths.append(new_file_path)
+
+    os.remove(original_file_path)
+
+    return new_file_paths
+
+def get_keys_from_json(file_path):
+    """
+    This function reads a JSON file from the given file path and returns a list of all keys.
+
+    :param file_path: The path to the JSON file.
+    :return: A list of keys from the JSON file.
+    """
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            keys = list(data.keys())
+            return keys
+    except Exception as e:
+        return f"Error: {e}"
+    
+
+def load_file(path,is_encrypted,store_paths,threshold=[],keywords=[]):
+    if is_encrypted:
+        file_extension = path.split('.')[-1].lower()
+        if file_extension=="json":
+            file_type=get_keys_from_json(path)
+        elif file_extension =='txt':
+            file_type=['Text']
+        elif file_extension in [ 'mp3', 'wav', 'aac', 'flac']:
+            file_type=['Audio']
+        elif file_extension in [ 'mp4', 'avi', 'mov', 'wmv']:
+            file_type=['Video']
+        elif file_extension in [ 'jpg', 'bmp', 'jpeg', 'gif','png']:
+            file_type=['Image']
+        else:
+            file_type=['Others']
+
+        infoID = ''.join([random.choice("0123456789abcdef") for _ in range(16)])
+        print(infoID,"   generated!")
+        infoTypesManager.add_record(infoID,str(file_type))
+        num_locations_to_use = random.randint(1, len(store_paths))
+        selected_locations = random.sample(store_paths, num_locations_to_use)
+        if threshold == []:
+            n = random.randint(1, len(store_paths))
+            if n == 1:
+                t = 1
+            else:
+                t = random.randint(2, n)
+        else:
+            n=threshold[0]
+            t=threshold[1]
+
+        if keywords == []:
+            keywords.append(random.choice(["Name","Phone","Age","Email"]))
+        ciphercenter.add_file(keywords, path, infoID, selected_locations, t, n)
+        encryptionStatusManager.add_record(infoID, is_encrypted)
+        
+    else:
+        file_extension = path.split('.')[-1].lower()
+        if file_extension=="json":
+            file_type=get_keys_from_json(path)
+        elif file_extension =='txt':
+            file_type=['Text']
+        elif file_extension in [ 'mp3', 'wav', 'aac', 'flac']:
+            file_type=['Audio']
+        elif file_extension in [ 'mp4', 'avi', 'mov', 'wmv']:
+            file_type=['Video']
+        elif file_extension in [ 'jpg', 'bmp', 'jpeg', 'gif','png']:
+            file_type=['Image']
+        else:
+            file_type=['Others']
+
+        infoID = ''.join([random.choice("0123456789abcdef") for _ in range(16)])
+        print(infoID,"   generated!")
+        infoTypesManager.add_record(infoID,str(file_type))
+        new_file_paths=copy_and_delete_file(path,store_paths,infoID)
+        print(new_file_paths)
+        encryptionStatusManager.add_record(infoID, is_encrypted)
+        plaintextLocationManager.add_record(infoID,str(new_file_paths))
+
 
 
 # 从文件中读取并反序列化密钥
@@ -78,11 +217,11 @@ with open('info_type.json', 'r') as file:
 
 # 使用 load_json 函数读取相应的 JSON 文件
 infoTypesManager.load_json('storeStatus.json')
-centralizedKeyManager.load_json('centralizedKeyStore.json')
-decentralizedKeyManager.load_json('decentralizedKeyStore.json')
-keyStatusManager.load_json('keyStatus.json')
+# centralizedKeyManager.load_json('centralizedKeyStore.json')
+# decentralizedKeyManager.load_json('decentralizedKeyStore.json')
+# keyStatusManager.load_json('keyStatus.json')
 plaintextLocationManager.load_json('duplication_info.json')
-encryptionStatusManager.load_json('key_storage_info.json')
+encryptionStatusManager.load_json('storeStatus.json')
 
 
 def overwrite_key_file(target_files, alg_param, level):
@@ -272,7 +411,7 @@ def get_key_storage_method():
 
 @app.route('/duplicationEncDel', methods=['POST'])
 def duplication_enc_del():
-    print("---------开始对副本进行删除-------------")
+    print("---------开始对密钥分片及密文副本进行删除-------------")
     # 获取POST请求中的JSON数据
     data = request.json
     # 提取duplicationDelCommand命令
@@ -298,16 +437,16 @@ def duplication_enc_del():
     base64_vrf_output = base64.b64encode(vrf_output)
     base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
 
-    print("使用以下VRF随机输出进行覆写副本文件:",base64_vrf_output_string)
 
-    ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
 
     if delete_granularity:
         try:
             if delete_alg=="overwrittenDelete":
+                print("使用以下VRF随机输出进行覆写密钥分片及密文副本:",base64_vrf_output_string)
                 ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
             elif delete_alg=="commandDelete":
+                print("使用删除命令删除密钥分片及密文副本:")
                 ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Command delete operation completed successfully."})
         except Exception as e:
@@ -316,9 +455,11 @@ def duplication_enc_del():
     else:
         try:
             if delete_alg=="overwrittenDelete":
+                print("使用以下VRF随机输出进行覆写密钥分片及密文副本:",base64_vrf_output_string)
                 ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
             elif delete_alg=="commandDelete":
+                print("使用删除命令删除密钥分片及密文副本:")
                 ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Command delete operation completed successfully."})
         except Exception as e:
@@ -591,4 +732,7 @@ def key_del():
 
 
 if __name__ == '__main__':
+
+    load_file(path="./1.png",is_encrypted=1,store_paths=['./e','./f','./c','./d'],threshold=[3,2],keywords=["abc"])
+    ciphercenter.keyword_search("abc","./c")
     app.run(port=7000)

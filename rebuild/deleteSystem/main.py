@@ -525,9 +525,10 @@ def get_instruction():
         print("Duplication and Key Information")
         print("------------------------------")
 
-        locations,key_locations=query_data_and_key_locations(infoID,app.config['store_system_port'])
+        locations,key_locations,key_status=query_data_and_key_locations(infoID,app.config['store_system_port'])
         print(f"Locations for infoID {infoID}: {locations}")
         print(f"Key locations for infoID {infoID}: {key_locations}")
+        print(f"Key status for infoID {infoID}: {key_status}")
 
         infoType=get_file_type(locations)
 
@@ -553,6 +554,7 @@ def get_instruction():
             print("The information is plaintext, there is no key deletion command")
 
 
+
 #########################删除命令发送#########################
         print("\n------------------------------")
         print("Delete Command Deliveried")
@@ -561,7 +563,7 @@ def get_instruction():
         # 初始化最终状态为成功
         final_status = "success"
 
-        final_status,deletePerformTime=deliver_delete_commands(app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds)
+        final_status,deletePerformTime=deliver_delete_commands(app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,key_status)
         
 
 
