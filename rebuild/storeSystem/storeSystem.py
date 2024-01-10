@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 import json
-from util import *
+from VRF_base import *
 import base64
 import os
 import shutil
