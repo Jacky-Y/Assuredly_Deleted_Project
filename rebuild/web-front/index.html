@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Viewer</title>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #logs {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .log-entry {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #f9f9f9;
+        }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .log-table th, .log-table td {
+            border: 1px solid #ddd;
+            padding: 5px;
+            text-align: left;
+        }
+        .log-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <div id="logs">
+        Logs will appear here...
+    </div>
+
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            var socket = io.connect('http://localhost:5555');
+            socket.on('new_log', function (msg) {
+                var logsDiv = document.getElementById('logs');
+
+                // 创建一个新的div元素用于展示日志
+                var logEntryDiv = document.createElement('div');
+                logEntryDiv.className = 'log-entry';
+
+                // 创建一个表格来格式化日志内容
+                var table = document.createElement('table');
+                table.className = 'log-table';
+
+                for (var key in msg) {
+                    if (msg.hasOwnProperty(key)) {
+                        var row = table.insertRow();
+                        var cell1 = row.insertCell(0);
+                        var cell2 = row.insertCell(1);
+                        cell1.innerHTML = key;
+                        cell2.innerHTML = msg[key];
+                    }
+                }
+
+                logEntryDiv.appendChild(table);
+                logsDiv.appendChild(logEntryDiv);
+            });
+        });
+    </script>
+</body>
+</html>

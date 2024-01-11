@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:400,600|Open+Sans:400,600,700" rel="stylesheet">
+    <link rel="stylesheet" href="../css/spur.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
+    <script src="../js/chart-js-config.js"></script>
+    <title>Spur - A Bootstrap Admin Template</title>
+</head>
+
+<body>
+    <div class="dash">
+        <div class="dash-nav dash-nav-dark">
+            <header>
+                <a href="#!" class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </a>
+                <a href="index.html" class="spur-logo"><i class="fas fa-bolt"></i> <span>Spur</span></a>
+            </header>
+            <nav class="dash-nav-list">
+                <a href="index.html" class="dash-nav-item">
+                    <i class="fas fa-home"></i> Dashboard </a>
+                <div class="dash-nav-dropdown">
+                    <a href="#!" class="dash-nav-item dash-nav-dropdown-toggle">
+                        <i class="fas fa-chart-bar"></i> Charts </a>
+                    <div class="dash-nav-dropdown-menu">
+                        <a href="chartjs.html" class="dash-nav-dropdown-item">Chart.js</a>
+                    </div>
+                </div>
+                <div class="dash-nav-dropdown ">
+                    <a href="#!" class="dash-nav-item dash-nav-dropdown-toggle">
+                        <i class="fas fa-cube"></i> Components </a>
+                    <div class="dash-nav-dropdown-menu">
+                        <a href="cards.html" class="dash-nav-dropdown-item">Cards</a>
+                        <a href="forms.html" class="dash-nav-dropdown-item">Forms</a>
+                        <div class="dash-nav-dropdown ">
+                            <a href="#" class="dash-nav-dropdown-item dash-nav-dropdown-toggle">Icons</a>
+                            <div class="dash-nav-dropdown-menu">
+                                <a href="icons.html" class="dash-nav-dropdown-item">Solid Icons</a>
+                                <a href="icons.html#regular-icons" class="dash-nav-dropdown-item">Regular Icons</a>
+                                <a href="icons.html#brand-icons" class="dash-nav-dropdown-item">Brand Icons</a>
+                            </div>
+                        </div>
+                        <a href="stats.html" class="dash-nav-dropdown-item">Stats</a>
+                        <a href="tables.html" class="dash-nav-dropdown-item">Tables</a>
+                        <a href="typography.html" class="dash-nav-dropdown-item">Typography</a>
+                        <a href="userinterface.html" class="dash-nav-dropdown-item">User Interface</a>
+                    </div>
+                </div>
+                <div class="dash-nav-dropdown">
+                    <a href="#!" class="dash-nav-item dash-nav-dropdown-toggle">
+                        <i class="fas fa-file"></i> Layouts </a>
+                    <div class="dash-nav-dropdown-menu">
+                        <a href="blank.html" class="dash-nav-dropdown-item">Blank</a>
+                        <a href="content.html" class="dash-nav-dropdown-item">Content</a>
+                        <a href="login.html" class="dash-nav-dropdown-item">Log in</a>
+                        <a href="signup.html" class="dash-nav-dropdown-item">Sign up</a>
+                    </div>
+                </div>
+                <div class="dash-nav-dropdown">
+                    <a href="#!" class="dash-nav-item dash-nav-dropdown-toggle">
+                        <i class="fas fa-info"></i> About </a>
+                    <div class="dash-nav-dropdown-menu">
+                        <a href="https://github.com/HackerThemes/spur-template" target="_blank" class="dash-nav-dropdown-item">GitHub</a>
+                        <a href="http://hackerthemes.com" target="_blank" class="dash-nav-dropdown-item">HackerThemes</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <div class="dash-app">
+            <header class="dash-toolbar">
+                <a href="#!" class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </a>
+                <a href="#!" class="searchbox-toggle">
+                    <i class="fas fa-search"></i>
+                </a>
+                <form class="searchbox" action="#!">
+                    <a href="#!" class="searchbox-toggle"> <i class="fas fa-arrow-left"></i> </a>
+                    <button type="submit" class="searchbox-submit"> <i class="fas fa-search"></i> </button>
+                    <input type="text" class="searchbox-input" placeholder="type to search">
+                </form>
+                <div class="tools">
+                    <a href="https://github.com/HackerThemes/spur-template" target="_blank" class="tools-item">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="#!" class="tools-item">
+                        <i class="fas fa-bell"></i>
+                        <i class="tools-item-count">4</i>
+                    </a>
+                    <div class="dropdown tools-item">
+                        <a href="#" class="" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-user"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenu1">
+                            <a class="dropdown-item" href="#!">Profile</a>
+                            <a class="dropdown-item" href="login.html">Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <main class="dash-content">
+                <!-- Log Viewer Card -->
+
+                <div class="container-fluid">
+                    <div class="row dash-row">
+                        <div class="col-xl-4">
+                            <div class="stats stats-primary">
+                                <h3 class="stats-title"> Total </h3>
+                                <div class="stats-content">
+                                    <!-- <div class="stats-icon">
+                                        <i class="fas fa-user"></i>
+                                    </div> -->
+                                    <div class="stats-data">
+                                        <div class="stats-number" data-type="total">0</div>
+                                        <div class="stats-change">
+                                            <span class="stats-timeframe">the Total Deletions</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4">
+                            <div class="stats stats-success ">
+                                <h3 class="stats-title"> Success </h3>
+                                <div class="stats-content">
+                                    <!-- <div class="stats-icon">
+                                        <i class="fas fa-cart-arrow-down"></i>
+                                    </div> -->
+                                    <div class="stats-data">
+                                        <div class="stats-number" data-type="success">0</div>
+                                        <div class="stats-change">
+                                            <span class="stats-timeframe">the Successful Deletions</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4">
+                            <div class="stats stats-danger">
+                                <h3 class="stats-title"> Failure </h3>
+                                <div class="stats-content">
+                                    <!-- <div class="stats-icon">
+                                        <i class="fas fa-phone"></i>
+                                    </div> -->
+                                    <div class="stats-data">
+                                        <div class="stats-number" data-type="failure">0</div>
+                                        <div class="stats-change">
+                                            <span class="stats-timeframe">the Failed Deletions</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xl-6">
+                            <div class="card spur-card">
+                                <div class="card-header">
+                                    <div class="spur-card-icon">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </div>
+                                    <div class="spur-card-title"> Bar Chart </div>
+                                    <div class="spur-card-menu">
+                                        <div class="dropdown show">
+                                            <a class="spur-card-menu-link" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            </a>
+                                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink">
+                                                <a class="dropdown-item" href="#">Action</a>
+                                                <a class="dropdown-item" href="#">Another action</a>
+                                                <a class="dropdown-item" href="#">Something else here</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body spur-card-body-chart">
+                                    <canvas id="spurChartjsBar"></canvas>
+                                    <script>
+                                        var ctx = document.getElementById("spurChartjsBar").getContext('2d');
+                                        var myChart = new Chart(ctx, {
+                                            type: 'bar',
+                                            data: {
+                                                labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                                                datasets: [{
+                                                    label: 'Blue',
+                                                    data: [12, 19, 3, 5, 2],
+                                                    backgroundColor: window.chartColors.primary,
+                                                    borderColor: 'transparent'
+                                                }]
+                                            },
+                                            options: {
+                                                legend: {
+                                                    display: false
+                                                },
+                                                scales: {
+                                                    yAxes: [{
+                                                        ticks: {
+                                                            beginAtZero: true
+                                                        }
+                                                    }]
+                                                }
+                                            }
+                                        });
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- <div class="col-xl-6">
+                            <div class="card spur-card">
+                                <div class="card-header">
+                                    <div class="spur-card-icon">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div class="spur-card-title"> Notifications </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="notifications table-responsive" style="max-height: 260px; overflow-y: auto; min-height: 260px;">
+                                        <table class="table table-hover" style="margin-left: auto; margin-right: auto;">
+                                            <tbody>
+                                                动态添加的通知将在这里显示
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> -->
+                        
+                        
+                        <div class="col-xl-6">
+                            <div class="card spur-card">
+                                <div class="card-header">
+                                    <div class="spur-card-icon">
+                                        <i class="fas fa-bell"></i>
+                                    </div>
+                                    <div class="spur-card-title"> Notifications </div>
+                                </div>
+                                <div class="card-body ">
+                                    <div class="notifications" style="max-height: 260px; overflow-y: auto; min-height: 260px;" >
+                                        <a href="#!" class="notification">
+                                            <div class="notification-icon">
+                                                <i class="fas fa-inbox"></i>
+                                            </div>
+                                            <div class="notification-text">New comment</div>
+                                            <span class="notification-time">21 days ago</span>
+                                        </a>
+
+                                        <div class="notifications-show-all">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            <!-- Log Viewer Card -->
+            <div class="col-xl-12">
+                <div class="card spur-card">
+                    <div class="card-header">
+                        <div class="spur-card-icon">
+                            <i class="fas fa-stream"></i>
+                        </div>
+                        <div class="spur-card-title">Log Viewer</div>
+                    </div>
+                    <div class="card-body">
+                        <div id="logs" style="height: 300px; overflow-y: scroll;" class="table-responsive"> 
+                            <table class="table">
+                                <tbody id="log-entries">
+                                    <!-- Log entries will be inserted here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </main>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="../js/spur.js"></script>
+
+    <!-- WebSocket JavaScript -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <!-- WebSocket JavaScript -->
+    <!-- WebSocket JavaScript -->
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Initialize the count variables
+            var total_number = 0;
+            var success_number = 0;
+            var failure_number = 0;
+
+            // Get references to the HTML elements where the counts will be displayed
+
+            // var failureStatsElement = document.querySelector('.stats-number[data-type="failure"]');
+            // var failureCount = failureStatsElement.textContent;
+
+            var totalNumberElement = document.querySelector('.stats-number[data-type="total"]');
+            var successNumberElement = document.querySelector('.stats-number[data-type="success"]');
+            var failureNumberElement = document.querySelector('.stats-number[data-type="failure"]');
+
+            // Update the counts in the UI
+            function updateCounts() {
+                totalNumberElement.textContent = total_number;
+                successNumberElement.textContent = success_number;
+                failureNumberElement.textContent = failure_number;
+            }
+
+            var socket = io.connect('http://localhost:5555');
+            var notificationsDiv = document.querySelector('.notifications'); // 修改为通知面板的容器
+    
+            socket.on('new_log', function (msg) {
+                var logsTbody = document.getElementById('log-entries');
+    
+                // 创建分隔行
+                var separatorRow = logsTbody.insertRow();
+                separatorRow.className = 'table-secondary'; // Bootstrap class for a colored row
+                var separatorCell = separatorRow.insertCell(0);
+                separatorCell.colSpan = 2; // Span across all columns
+                separatorCell.innerHTML = `System ID: ${msg.systemID || ''}, System IP: ${msg.systemIP || ''}`;
+    
+                // 遍历消息对象中的每个键值对
+                for (var key in msg) {
+                    if (msg.hasOwnProperty(key) && key !== 'systemID' && key !== 'systemIP') {
+                        var row = logsTbody.insertRow();
+                        var cell1 = row.insertCell(0);
+                        var cell2 = row.insertCell(1);
+                        cell1.innerHTML = key;
+                        cell2.innerHTML = msg[key];
+                    }
+                }
+
+                total_number++;
+    
+                // 创建信息版的通知消息
+                var notification = document.createElement('a');
+                notification.href = "#!";
+                notification.className = "notification";
+    
+                var notificationIconDiv = document.createElement('div');
+                notificationIconDiv.className = "notification-icon";
+                notificationIconDiv.innerHTML = '<i class="fas fa-inbox"></i>';
+    
+                var notificationContentDiv = document.createElement('div');
+                notificationContentDiv.className = "notification-text";
+
+                if (msg.Success) {
+                    notificationContentDiv.textContent =`${msg.systemID} 节点已经成功完成删除操作`;
+                    success_number++;
+                } else {
+                    notificationContentDiv.textContent =`${msg.systemID} 节点无法完成删除操作`;
+                    failure_number++;
+                }
+                // notificationContentDiv.textContent = msg.Success ? 
+                //     `${msg.systemID} 节点已经成功完成删除操作` :
+                //     `${msg.systemID} 节点无法完成删除操作`;
+    
+                var notificationTimeSpan = document.createElement('span');
+                notificationTimeSpan.className = "notification-time";
+                const currentTime = new Date();
+                const formattedTime = currentTime.toLocaleString();
+                notificationTimeSpan.textContent = formattedTime;
+    
+                // 将图标、文本内容和时间添加到通知元素中
+                notification.appendChild(notificationIconDiv);
+                notification.appendChild(notificationContentDiv);
+                notification.appendChild(notificationTimeSpan);
+    
+                // 将通知元素添加到通知面板中
+                notificationsDiv.appendChild(notification);
+    
+                // 保持通知面板的滚动条在底部，以显示最新的通知
+                notificationsDiv.scrollTop = notificationsDiv.scrollHeight;
+
+
+                // Update the counts in the UI
+                updateCounts();
+            });
+
+                // Update the counts in the UI
+                updateCounts();
+        });
+    </script>
+    
+    
+</body>
+
+</html>
