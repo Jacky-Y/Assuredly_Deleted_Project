@@ -31,7 +31,7 @@ def generate_delete_level(max_level):
 # 输出：
 #    tuple - 包含两个字典，分别代表普通数据和密钥的删除命令。
 
-def generate_delete_commands(store_system_port, max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType):
+def generate_delete_commands(store_system_port, max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType,affairsID):
         # 检查 store_system_port 是否为整数
     if not isinstance(store_system_port, int):
         raise TypeError("store_system_port must be an integer")
@@ -76,6 +76,8 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
     duplicationDelCommand = {
         #指定infoID
         "infoID": infoID,
+        #指定事务ID
+        "affairsID":affairsID,
         # 指定删除目标的位置
         "target": locations,              
         # 指定删除操作的粒度
@@ -94,6 +96,8 @@ def generate_delete_commands(store_system_port, max_level, infoID, locations, ke
     keyDelCommand = {
         #指定infoID
         "infoID": infoID,
+        #指定事务ID
+        "affairsID":affairsID,
         # 指定关键数据删除目标的位置
         "target": key_locations,           
         # 指定使用的删除算法

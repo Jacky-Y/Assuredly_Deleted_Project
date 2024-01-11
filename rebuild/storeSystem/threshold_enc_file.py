@@ -1,10 +1,6 @@
 from secrets import randbelow
 from typing import List, Tuple
 from functools import reduce
-# from Crypto.Util.py3compat import is_native_int
-# from Crypto.Util import number
-# from Crypto.Util.number import long_to_bytes, bytes_to_long
-# from Crypto.Random import get_random_bytes as rng
 from math import ceil
 import binascii
 import os
@@ -34,8 +30,7 @@ class SecretShare(object):
             coeffs = [_Element(rng(16)) for i in range(t - 1)]
             coeffs.append(_Element(secret))
 
-            # Each share is y_i = p(x_i) where x_i is the public index
-            # associated to each of the n users.
+            # 每个分片为  y_i = p(x_i) 其中 x_i 是公开索引
 
             def make_share(user, coeffs):
                 idx = _Element(user)
@@ -103,7 +98,7 @@ def long_to_bytes(n, blocksize=0):
     result = []
     pack = struct.pack
 
-    # Fill the first block independently from the value of n
+    # 根据n数值独立填充第一个块
     bsr = blocksize
     while bsr >= 8:
         result.insert(0, pack('>Q', n & 0xFFFFFFFFFFFFFFFF))
@@ -126,13 +121,13 @@ def long_to_bytes(n, blocksize=0):
         else:
             bresult = b''.join(result)
     else:
-        # The encoded number exceeds the block size
+        # 编码的数超过块的规模
         while n > 0:
             result.insert(0, pack('>Q', n & 0xFFFFFFFFFFFFFFFF))
             n = n >> 64
         result[0] = result[0].lstrip(b'\x00')
         bresult = b''.join(result)
-        # bresult has minimum length here
+        # bresult此处有最小长度
         if blocksize > 0:
             target_len = ((len(bresult) - 1) // blocksize + 1) * blocksize
             bresult = b'\x00' * (target_len - len(bresult)) + bresult
@@ -145,8 +140,6 @@ def bytes_to_long(s):
 
     unpack = struct.unpack
 
-    # Up to Python 2.7.4, struct.unpack can't work with bytearrays nor
-    # memoryviews
     if sys.version_info[0:3] < (2, 7, 4):
         if isinstance(s, bytearray):
             s = bytes(s)
@@ -167,9 +160,9 @@ def rng(num):
     return os.urandom(num)
 
 def _mult_gf2(f1, f2):
-    """Multiply two polynomials in GF(2)"""
+    """GF(2)上两个多项式乘法"""
 
-    # Ensure f2 is the smallest
+    # 确保f2是其中小的
     if f2 > f1:
         f1, f2 = f2, f1
     z = 0
@@ -182,10 +175,9 @@ def _mult_gf2(f1, f2):
 
 def _div_gf2(a, b):
     """
-    Compute division of polynomials over GF(2).
-    Given a and b, it finds two polynomials q and r such that:
-
-    a = b*q + r with deg(r)<deg(b)
+    计算GF(2)上多项式除法.
+    给定a 和 b, 找到两个多项式 q 和 r 满足:
+        a = b*q + r with deg(r)<deg(b)
     """
 
     if (a < b):
@@ -203,17 +195,15 @@ def _div_gf2(a, b):
 
 
 class _Element(object):
-    """Element of GF(2^128) field"""
+    """GF(2^128)域上的元素"""
 
-    # The irreducible polynomial defining this field is 1+x+x^2+x^7+x^128
+    # 该域上不可约多项式 1+x+x^2+x^7+x^128
     irr_poly = 1 + 2 + 4 + 128 + 2 ** 128
 
     def __init__(self, encoded_value):
-        """Initialize the element to a certain value.
+        """初始化元素为特定值
 
-        The value passed as parameter is internally encoded as
-        a 128-bit integer, where each bit represents a polynomial
-        coefficient. The LSB is the constant coefficient.
+        作为参数传递的值在内部编码为128位整数，其中每个位表示一个多项式系数。LSB是常数系数
         """
 
         if is_native_int(encoded_value):
@@ -227,11 +217,11 @@ class _Element(object):
         return self._value == other._value
 
     def __int__(self):
-        """Return the field element, encoded as a 128-bit integer."""
+        """返回域元素, 编码为128-bit整数."""
         return self._value
 
     def encode(self):
-        """Return the field element, encoded as a 16 byte string."""
+        """返回域元素, 编码为16 byte string."""
         return long_to_bytes(self._value, 16)
 
     def __mul__(self, factor):
@@ -239,7 +229,7 @@ class _Element(object):
         f1 = self._value
         f2 = factor._value
 
-        # Make sure that f2 is the smallest, to speed up the loop
+        # 确保f2是其中小的，加速循环
         if f2 > f1:
             f1, f2 = f2, f1
 
@@ -249,11 +239,11 @@ class _Element(object):
         mask1 = 2 ** 128
         v, z = f1, 0
         while f2:
-            # if f2 ^ 1: z ^= v
+            # 如果 f2 ^ 1: z ^= v
             mask2 = int(bin(f2 & 1)[2:] * 128, base=2)
             z = (mask2 & (z ^ v)) | ((mask1 - mask2 - 1) & z)
             v <<= 1
-            # if v & mask1: v ^= self.irr_poly
+            # 如果 v & mask1: v ^= self.irr_poly
             mask3 = int(bin((v >> 128) & 1)[2:] * 128, base=2)
             v = (mask3 & (v ^ self.irr_poly)) | ((mask1 - mask3 - 1) & v)
             f2 >>= 1
@@ -263,9 +253,9 @@ class _Element(object):
         return _Element(self._value ^ term._value)
 
     def inverse(self):
-        """Return the inverse of this element in GF(2^128)."""
+        """返回GF(2^128)上元素的逆"""
 
-        # We use the Extended GCD algorithm
+        # 使用扩展的GCD算法
         # http://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
 
         if self._value == 0:
@@ -302,6 +292,7 @@ def file_enc(key, path, path_set):
 
         enc_data = sm4_enc.crypt_cbc(iv, data)
 
+        # 如果是路径字符串
         if type(path_set) == type("1"):
             # 随机设定文件名
             flag = True
@@ -312,6 +303,7 @@ def file_enc(key, path, path_set):
                 else:
                     flag = False
             epath = path_set + "/" + rnd_name + ".dat"
+            # 写入到目标位置，并重新命名
             fw = open(epath, "wb")
             fw.write(iv)
             fw.write(enc_data)
@@ -327,7 +319,7 @@ def file_enc(key, path, path_set):
                 else:
                     flag = False
             epath = path_set[0] + "/" + rnd_name + ".dat"
-
+            # 先写一个加密文件
             fw = open(epath, "wb")
             fw.write(iv)
             fw.write(enc_data)
@@ -347,14 +339,16 @@ def file_enc(key, path, path_set):
                 shutil.copy(epath, cpath)
                 epath_set.append(cpath)
     except Exception as e:
-        print("文件打开失败：", str(e))
+        print(path, "file_enc 文件打开失败：", str(e))
     finally:
         fr.close()
         # 原文件删除 ***删除操作***
-        #os.remove(path)
+        # os.remove(path)
+        # 返回加密后的路径集合
         return epath_set
 
 # 文件解密
+# 从path用key解密等到fname文件，存储到dpath
 def file_dec(key, path, fname, dpath="."):
     data = bytearray(256)
     iv = bytearray(16)
@@ -371,27 +365,30 @@ def file_dec(key, path, fname, dpath="."):
         fw = open(dpath+"/"+fname, "wb")
         fw.write(dec_data)
     except Exception as e:
-        print("文件打开失败：", str(e))
+        print(path, "file_dec 文件打开失败：", str(e))
     finally:
         fr.close()
         fw.close()
 
 # 将密钥写入文件记录
+# 写入到指定路径
 def save_K(key, path):
     try:
         fw = open(path, "wb")
         fw.write(key)
     except Exception as e:
-        print("文件打开失败：", str(e))
+        print(path, "save_K 文件打开失败：", str(e))
     finally:
         fw.close()
 
+# 读取密钥
+# 从指定路径读取
 def read_K(path, key):
     try:
         fr = open(path, "rb")
         key[:] = fr.read()
     except Exception as e:
-        print("密钥读取失败：", str(e))
+        print(path, "read_K 密钥读取失败：", str(e))
     finally:
         fr.close()
 
@@ -408,7 +405,7 @@ def del_file(path, del_method, vrf, level):
         print(f"已经完成对{path}的删除")
         # other delete method
 
-# 更新密文文件字段
+# 更新密文文件字段，解密删除字段后再加密，然后拷贝副本
 def update_field(old_fkey, fkey, field, old_path_set, path_set, del_method, vrf, level):
     data = bytearray(256)
     _data = {}
@@ -446,6 +443,7 @@ def update_field(old_fkey, fkey, field, old_path_set, path_set, del_method, vrf,
     sm4_enc.set_key(fkey, SM4_ENCRYPT)
 
     _enc_data = sm4_enc.crypt_cbc(iv, json.dumps(_data, indent=4).encode())
+
     fw = open(epath, "wb")
     fw.write(iv)
     fw.write(_enc_data)
@@ -457,6 +455,7 @@ def update_field(old_fkey, fkey, field, old_path_set, path_set, del_method, vrf,
     # 存储副本
     for fp in path_set:
         shutil.copy(epath, fp)
+    path_set.append(epath)
 
 xor = lambda a, b:list(map(lambda x, y: x ^ y, a, b))
 
@@ -605,7 +604,8 @@ def sm3_hash(msg):
         result = '%s%08x' % (result, i)
     return result
 
-def sm3_kdf(z, klen): # z为16进制表示的比特串（str），klen为密钥长度（单位byte）
+# z为16进制表示的比特串（str），klen为密钥长度（单位byte）
+def sm3_kdf(z, klen):
     print("in", z)
     klen = int(klen)
     ct = 0x00000001
@@ -643,10 +643,10 @@ SM4_BOXES_TABLE = [
     0x48,
 ]
 
-# System parameter
+# 系统参数
 SM4_FK = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc]
 
-# fixed parameter
+# 固定参数
 SM4_CK = [
     0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269,
     0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9,
@@ -664,16 +664,17 @@ SM4_DECRYPT = 1
 PKCS7 = 0
 ZERO = 1
 
+# 国密SM4加密
 class CryptSM4(object):
 
     def __init__(self, mode=SM4_ENCRYPT, padding_mode=PKCS7):
         self.sk = [0] * 32
         self.mode = mode
         self.padding_mode = padding_mode
-    # Calculating round encryption key.
-    # args:    [in] a: a is a 32 bits unsigned value;
-    # return: sk[i]: i{0,1,2,3,...31}.
 
+    # 计算轮密钥
+    # 输入：32bit无符号值
+    # 输出：32字节的密钥
     @classmethod
     def _round_key(cls, ka):
         b = [0, 0, 0, 0]
@@ -686,19 +687,13 @@ class CryptSM4(object):
         rk = bb ^ (rotl(bb, 13)) ^ (rotl(bb, 23))
         return rk
 
-    # Calculating and getting encryption/decryption contents.
-    # args:    [in] x0: original contents;
-    # args:    [in] x1: original contents;
-    # args:    [in] x2: original contents;
-    # args:    [in] x3: original contents;
-    # args:    [in] rk: encryption/decryption key;
-    # return the contents of encryption/decryption contents.
+    # 输入：x0,x1,x2,x3是原内容，rk是加密/解密密钥
+    # 计算并得到加密/解密内容
     @classmethod
     def _f(cls, x0, x1, x2, x3, rk):
-        # "T algorithm" == "L algorithm" + "t algorithm".
-        # args:    [in] a: a is a 32 bits unsigned value;
-        # return: c: c is calculated with line algorithm "L" and nonline
-        # algorithm "t"
+        # "T 算法" == "L 算法" + "t 算法".
+        # 输入：32 bits 无符号数值
+        # 输出：c: c用线性算法"L"和非线性算法"t"计算
         def _sm4_l_t(ka):
             b = [0, 0, 0, 0]
             a = put_uint32_be(ka)
@@ -763,8 +758,9 @@ class CryptSM4(object):
         out_put += put_uint32_be(ulbuf[32])
         return out_put
 
+    # ECB加密模式
     def crypt_ecb(self, input_data):
-        # SM4-ECB block encryption/decryption
+
         input_data = bytes_to_list(input_data)
         if self.mode == SM4_ENCRYPT:
             if self.padding_mode == PKCS7:
@@ -786,8 +782,9 @@ class CryptSM4(object):
                 return list_to_bytes(zero_unpadding(output_data))
         return list_to_bytes(output_data)
 
+    # CBC加密模式
     def crypt_cbc(self, iv, input_data):
-        # SM4-CBC buffer encryption/decryption
+
         i = 0
         output_data = []
         tmp_input = [0] * 16
@@ -812,11 +809,13 @@ class CryptSM4(object):
                 length -= 16
             return list_to_bytes(pkcs7_unpadding(output_data))
 
-def gen_key():
-    rnd = os.urandom(8)
-    key = int.from_bytes(rnd, byteorder='big')
-    return key
-
+# 调试样例
+# 正确输出示例：重构密钥1与原密钥相等
+# 原密钥： 29245834560b829fb3748aed5f8aa5a4
+# [(1, b'\xbe\x93\xb3.$\xddl\xa2\xba[\xc9\x0e^\xfd+P'), (2, b'\x06K\x8e\x00\xb3\xa6^\xe5\xa1*\r+]e\xb8\xcb'), (3, b'\x91\xfce\x1a\xc1p\xb0\xd8\xa8\x05N\xc8\\\x126?')]
+# 重构的密钥1： 29245834560b829fb3748aed5f8aa5a4
+# [(1, b'\x06K\x8e\x00\xb3\xa6^\xe5\xa1*\r+]e\xb8\xcb'), (2, b'\x91\xfce\x1a\xc1p\xb0\xd8\xa8\x05N\xc8\\\x126?')]
+# 重构的密钥2： 8b26d709621404f159cf338a5db73d1a
 if __name__ == "__main__":
     # 测试
     secret_share = SecretShare()

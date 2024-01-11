@@ -538,7 +538,7 @@ def get_instruction():
         print("Delete Commands")
         print("------------------------------")
 
-        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType)
+        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType,affairsID)
 
         duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
         print(f"Duplication Delete Command: {duplicationDelCommand_str}")
@@ -696,7 +696,7 @@ def get_instruction():
             print("infoID not found in operation_log dictionary")
 
 
-        # save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
+        save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
 
 #########################删除结果汇总#########################
         print("\n------------------------------")

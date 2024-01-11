@@ -1,6 +1,8 @@
 import os
 import json
 
+from models.operation_log_model import OperationLogModel
+
 def save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot):
     """
     保存操作日志。
@@ -65,45 +67,51 @@ def save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMetho
         raise TypeError("isRoot must be a bool")
 
 
-    # 添加操作日志的特有的字段
-    operation_log = fullEvidence.copy() # 创建 fullEvidence 的副本以避免修改原始数据
+    # # 添加操作日志的特有的字段
+    # operation_log = fullEvidence.copy() # 创建 fullEvidence 的副本以避免修改原始数据
 
-    # 修改 operation_log 字典中的部分字段
-    # 移除 'others' 字段
-    operation_log["data"].pop("others", None)
+    # # 修改 operation_log 字典中的部分字段
+    # # 移除 'others' 字段
+    # operation_log["data"].pop("others", None)
 
-    #添加isRoot字段
-    operation_log['isRoot']=isRoot
+    # #添加isRoot字段
+    # operation_log['isRoot']=isRoot
 
-    # 更新其他字段
-    operation_log["data"]["affairsID"] = affairsID
-    operation_log["data"]["userID"] = userID
-    operation_log["data"]["classification_info"] = sorted_data
-    operation_log["data"]["deleteMethod"] = deleteMethod
-    operation_log["data"]["deleteGranularity"] = deleteGranularity
+    # # 更新其他字段
+    # operation_log["data"]["affairsID"] = affairsID
+    # operation_log["data"]["userID"] = userID
+    # operation_log["data"]["classification_info"] = sorted_data
+    # operation_log["data"]["deleteMethod"] = deleteMethod
+    # operation_log["data"]["deleteGranularity"] = deleteGranularity
 
-    # 根据 key_locations 的值更新或清除 deleteKeyinfoID 字段
-    operation_log["data"]["deleteKeyinfoID"] = key_locations if key_locations else ''
+    # # 根据 key_locations 的值更新或清除 deleteKeyinfoID 字段
+    # operation_log["data"]["deleteKeyinfoID"] = key_locations if key_locations else ''
 
-    # 确保log文件夹存在，不存在则创建
-    log_dir = "log"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    # # 确保log文件夹存在，不存在则创建
+    # log_dir = "log"
+    # if not os.path.exists(log_dir):
+    #     os.makedirs(log_dir)
 
-    # 检查 infoID 是否存在
-    if infoID:
-        # 构建目标文件路径
-        target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
+    # # 检查 infoID 是否存在
+    # if infoID:
+    #     # 构建目标文件路径
+    #     target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
 
-        # 打开文件并写入操作日志
-        with open(target_file_path, 'w', encoding='utf-8') as target_file:
-            # 使用 json.dump 将操作日志转换为 JSON 格式并保存
-            json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
+    #     # 打开文件并写入操作日志
+    #     with open(target_file_path, 'w', encoding='utf-8') as target_file:
+    #         # 使用 json.dump 将操作日志转换为 JSON 格式并保存
+    #         json.dump(operation_log, target_file, ensure_ascii=False, indent=4)
 
-        # 输出保存成功的消息
-        print(f"File saved as {target_file_path}")
-    else:
-        # infoID 不存在时的错误提示
-        print("infoID not found in operation_log dictionary")
+    #     # 输出保存成功的消息
+    #     print(f"File saved as {target_file_path}")
+    # else:
+    #     # infoID 不存在时的错误提示
+    #     print("infoID not found in operation_log dictionary")
 
     # 函数结束
+
+    db_model = OperationLogModel("127.0.0.1", "root", "123456", "assured_deletion")
+    db_model.add_record(fullEvidence)
+    print("log added!")
+
+

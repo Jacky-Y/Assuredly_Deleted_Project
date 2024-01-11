@@ -1,10 +1,12 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 import json
-from VRF_base import *
+from VRF_gm import *
 import base64
 import os
 import shutil
 import random
+import zipfile
+import tempfile
 
 from overwirter_class import JsonOverwriter
 from overwirter_class import TextOverwriter
@@ -34,7 +36,7 @@ infoTypesManager=InfoTypesManager(db_config)
 # keyStatusManager=KeyStatusManager(db_config)
 plaintextLocationManager=PlaintextLocationManager(db_config)
 encryptionStatusManager=EncryptionStatusManager(db_config)
-ciphercenter = cipher_center.CipherCTR(True,True,False)
+ciphercenter = cipher_center.CipherCTR(isLoad=True)
 
 #  # 两处副本目录
 # copy_paths = ["./c", "./e"]
@@ -177,18 +179,18 @@ def load_file(path,is_encrypted,store_paths,threshold=[],keywords=[]):
 
 
 
-# 从文件中读取并反序列化密钥
-def deserialize_keys(private_file='private_key.pem'):
-    # 从文件读取并反序列化私钥
-    with open(private_file, 'rb') as f:
-        private_key = serialization.load_pem_private_key(
-            f.read(),
-            password=None,
-        )
+# # 从文件中读取并反序列化密钥
+# def deserialize_keys(private_file='private_key.pem'):
+#     # 从文件读取并反序列化私钥
+#     with open(private_file, 'rb') as f:
+#         private_key = serialization.load_pem_private_key(
+#             f.read(),
+#             password=None,
+#         )
 
-    return private_key
+#     return private_key
 
-private_key=deserialize_keys('private_key.pem')
+private_key=load_private_key()
 
 # Read from storeStatus.json
 with open('storeStatus.json', 'r') as file:
@@ -440,6 +442,7 @@ def duplication_enc_del():
 
     # 分别解析各个字段
     infoID = duplication_del_command.get('infoID')
+    affairsID=duplication_del_command.get('affairsID')
     target_files = duplication_del_command.get('target')
     delete_alg=duplication_del_command.get('deleteAlg')
     delete_granularity = duplication_del_command.get('deleteGranularity', None)  # 如果字段不存在则返回None
@@ -448,18 +451,24 @@ def duplication_enc_del():
     info_type=duplication_del_command.get('infoType')
 
 
-    #计算vrf
-    vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
-
-    # 将二进制数据转换为 Base64 字符串
-    base64_vrf_output = base64.b64encode(vrf_output)
-    base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
-
 
 
     if delete_granularity:
         try:
             if delete_alg=="overwrittenDelete":
+
+                #计算vrf
+                vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
+
+                # 将二进制数据转换为 Base64 字符串
+                base64_vrf_output = base64.b64encode(vrf_output)
+                base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
+
+                # 保存 proof
+                base64_proof = base64.b64encode(proof).decode('utf-8')
+                save_proof(infoID, affairsID,base64_proof, 'duplicationDel_proof.json')
+
+
                 print("使用以下VRF随机输出进行覆写密钥分片及密文副本:",base64_vrf_output_string)
                 ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
@@ -473,6 +482,18 @@ def duplication_enc_del():
     else:
         try:
             if delete_alg=="overwrittenDelete":
+
+                #计算vrf
+                vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
+
+                # 将二进制数据转换为 Base64 字符串
+                base64_vrf_output = base64.b64encode(vrf_output)
+                base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
+
+                # 保存 proof
+                base64_proof = base64.b64encode(proof).decode('utf-8')
+                save_proof(infoID, affairsID,base64_proof, 'duplicationDel_proof.json')
+
                 print("使用以下VRF随机输出进行覆写密钥分片及密文副本:",base64_vrf_output_string)
                 ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
@@ -484,6 +505,17 @@ def duplication_enc_del():
             print(str(e))
             return jsonify({"status": "error", "message": str(e)}), 500
 
+def save_proof(info_id, affairsID, proof, filename):
+    """保存 proof 到指定的 JSON 文件"""
+    try:
+        with open(filename, 'r') as f:
+            proof_data = json.load(f)
+    except (IOError, json.JSONDecodeError):
+        proof_data = []
+
+    proof_data.append({"infoID": info_id, "affairsID":affairsID ,"proof": proof})
+    with open(filename, 'w') as f:
+        json.dump(proof_data, f, indent=4)
 
 @app.route('/duplicationDel', methods=['POST'])
 def duplication_del():
@@ -497,6 +529,8 @@ def duplication_del():
         return jsonify({"status": "error", "message": "duplicationDelCommand not provided"}), 400
 
     # 分别解析各个字段
+    infoID = duplication_del_command.get('infoID')
+    affairsID=duplication_del_command.get('affairsID')
     target_files = duplication_del_command.get('target')
     delete_alg=duplication_del_command.get('deleteAlg')
     delete_granularity = duplication_del_command.get('deleteGranularity', None)  # 如果字段不存在则返回None
@@ -505,15 +539,21 @@ def duplication_del():
     info_type=duplication_del_command.get('infoType')
 
 
-    #计算vrf
-    vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
-
-    # 将二进制数据转换为 Base64 字符串
-    base64_vrf_output = base64.b64encode(vrf_output)
-    base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
-
 
     if delete_alg=="overwrittenDelete":
+
+        #计算vrf
+        vrf_output, proof = compute_vrf(private_key, delete_alg_param.encode())
+
+        # 将二进制数据转换为 Base64 字符串
+        base64_vrf_output = base64.b64encode(vrf_output)
+        base64_vrf_output_string = base64_vrf_output.decode('utf-8')  # 转换为字符串以便存储到 JSON
+
+        # 保存 proof
+        base64_proof = base64.b64encode(proof).decode('utf-8')
+        save_proof(infoID, affairsID,base64_proof, 'duplicationDel_proof.json')
+
+
         print("使用以下VRF随机输出进行覆写副本文件:",base64_vrf_output_string)
 
         if info_type==1:
@@ -747,10 +787,154 @@ def key_del():
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
 
+@app.route('/getRetentionStatus', methods=['POST'])
+def retention_status():
+    try:
+        app.logger.info("Received request for retention status.")
+        data = request.get_json()
+
+        print(data)
+        app.logger.info(f"Request data: {data}")
+
+        delete_dupinfo_ids = data.get('deleteDupinfoID', [])
+        delete_keyinfo_ids = data.get('deleteKeyinfoID', [])
+        print(11111)
+        if isinstance(delete_dupinfo_ids, str):
+            delete_dupinfo_ids = json.loads(delete_dupinfo_ids)
+        print(2222)
+        if isinstance(delete_keyinfo_ids, str):
+            delete_keyinfo_ids = json.loads(delete_keyinfo_ids)
+        print(3333)
+        files_to_send = []
+        print(1234)
+        # 遍历 deleteDupinfoID 字段中的所有文件路径
+        for file_path in delete_dupinfo_ids:
+            full_path = os.path.join(file_path.strip("./"))
+            if os.path.exists(full_path):
+                files_to_send.append(full_path)
+            else:
+                app.logger.warning(f"File not found: {full_path}")
+
+        # 如果存在 deleteKeyinfoID 字段，则也遍历这些文件路径
+        if delete_keyinfo_ids:
+            for file_path in delete_keyinfo_ids:
+                full_path = os.path.join(file_path.strip("./"))
+                if os.path.exists(full_path):
+                    files_to_send.append(full_path)
+                else:
+                    app.logger.warning(f"File not found: {full_path}")
+
+        # 无论是否存在 deleteKeyinfoID 字段，都添加 duplicationDel_proof.json
+        files_to_send.append('duplicationDel_proof.json')
+        print(16788)
+        if not files_to_send:
+            app.logger.error("No files found for given IDs.")
+            return {'error': 'No files found'}, 404
+
+        temp_zip_path = ''
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_zip:
+            with zipfile.ZipFile(temp_zip, 'w') as zipf:
+                for idx, file in enumerate(files_to_send):
+                    zipf.write(file, f"{idx}_{os.path.basename(file)}")
+            temp_zip_path = temp_zip.name
+
+        if temp_zip_path:
+            app.logger.info(f"Sending ZIP file: {temp_zip_path}")
+            return send_file(temp_zip_path, as_attachment=True)
+
+        return {'error': 'No files to send'}, 404
+
+    except Exception as e:
+        app.logger.error(f"Error processing request: {e}")
+        return {'error': 'Internal Server Error'}, 500
+# @app.route('/getRetentionStatus', methods=['POST'])
+# def retention_status():
+#     try:
+#         app.logger.info("Received request for retention status.")
+#         data = request.get_json()
+#         app.logger.info(f"Request data: {data}")
+
+#         delete_dupinfo_ids = json.loads(data.get('deleteDupinfoID', '[]'))
+#         delete_keyinfo_ids = json.loads(data.get('deleteKeyinfoID', '[]'))
+
+#         files_to_send = []
+
+#         for file_path in delete_dupinfo_ids:
+#             full_path = os.path.join(file_path.strip("./"))
+#             app.logger.info(f"Checking file: {full_path}")
+#             if os.path.exists(full_path):
+#                 files_to_send.append(full_path)
+#             else:
+#                 app.logger.warning(f"File not found: {full_path}")
+
+#         if delete_keyinfo_ids:
+#             for file_path in delete_keyinfo_ids:
+#                 full_path = os.path.join(file_path.strip("./"))
+#                 app.logger.info(f"Checking file: {full_path}")
+#                 if os.path.exists(full_path):
+#                     files_to_send.append(full_path)
+#                 else:
+#                     app.logger.warning(f"File not found: {full_path}")
+#             files_to_send.extend(['duplicationDel_proof.json', 'keyDel_proof.json'])
+#         else:
+#             files_to_send.append('duplicationDel_proof.json')
+
+#         if not files_to_send:
+#             app.logger.error("No files found for given IDs.")
+#             return {'error': 'No files found'}, 404
+
+#         with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_zip:
+#             with zipfile.ZipFile(temp_zip, 'w') as zipf:
+#                 for idx, file in enumerate(files_to_send):
+#                     app.logger.info(f"Adding file to ZIP: {file}")
+#                     zipf.write(file, f"{idx}_{os.path.basename(file)}")
+
+#             app.logger.info(f"Sending ZIP file: {temp_zip.name}")
+#             return send_file(temp_zip.name, as_attachment=True)
+#     except Exception as e:
+#         app.logger.error(f"Error processing request: {e}")
+#         return {'error': 'Internal Server Error'}, 500
+
+@app.route('/getRetentionStatus2', methods=['POST'])
+def retention_status2():
+    try:
+        app.logger.info("Received request for retention status.")
+        file_paths = request.get_json()  # 直接接收文件路径的列表
+        app.logger.info(f"Request data: {file_paths}")
+
+        files_to_send = []
+
+        # 处理文件路径
+        for path in file_paths:
+            full_path = os.path.abspath(path)  # 获取绝对路径
+            app.logger.info(f"Checking file: {full_path}")
+            if os.path.exists(full_path):
+                files_to_send.append(full_path)
+            else:
+                app.logger.warning(f"File not found: {full_path}")
+
+        # 添加证明文件（如果需要）
+        files_to_send.extend(['duplicationDel_proof.json', 'keyDel_proof.json'])
+
+        if not files_to_send:
+            app.logger.error("No files found for given paths.")
+            return {'error': 'No files found'}, 404
+
+        # 创建ZIP文件并发送
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_zip:
+            with zipfile.ZipFile(temp_zip, 'w') as zipf:
+                for idx, file in enumerate(files_to_send):
+                    zipf.write(file, f"{idx}_{os.path.basename(file)}")
+            return send_file(temp_zip.name, as_attachment=True)
+
+    except Exception as e:
+        app.logger.error(f"Error processing request: {e}")
+        return {'error': 'Internal Server Error'}, 500
 
 
 if __name__ == '__main__':
 
-    load_file(path="./1.png",is_encrypted=1,store_paths=['./e','./f','./c','./d'],threshold=[3,2],keywords=["abc"])
-    ciphercenter.keyword_search("abc","./c")
+    # load_file(path="./1.png",is_encrypted=1,store_paths=['./e','./f','./c','./d'],threshold=[3,2],keywords=["abc"])
+    # ciphercenter.keyword_search("abc","./c")
+    # app.run(host="172.18.0.56",port=7000)
     app.run(port=7000)

@@ -14,17 +14,16 @@ class SECipher:
 
 class SEServer:
     # 声明SSE的服务器EDB
-    def __init__(self, isdel=True):
+    def __init__(self, isLoad=False):
         self.cipher_db: Dict[bytes, SECipher] = {}
         self.GRP: Dict[bytes, Dict[bytes, bytes]] = {}
-        self.if_cleaning = False
-        self.p_clean_thread = None
+
         self.db = 'edb'
         # 创建连接对象
         try:
             self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
             # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
-            print("成功连接到MySQL服务器！")
+            # print("成功连接到MySQL服务器！")
         except Exception as e:
             print("无法连接到MySQL服务器：", str(e))
         # 获取游标对象
@@ -32,7 +31,7 @@ class SEServer:
         # 关闭自动提交事务
         self.conn.autocommit(False)
 
-        self.setup(isdel)
+        self.setup(isLoad)
 
     # 销毁类的析构函数
     def __del__(self):
@@ -41,103 +40,104 @@ class SEServer:
         self.cipher_db.clear()
         self.GRP.clear()
 
-        self.cursor.close()
+        # 关闭mysql连接
+        if self.cursor:
+            self.cursor.close()
         if self.conn.open:
             self.conn.close()
 
-    # 清空mysql的EDB包括cipher和group两张表
-    # 存在就删除，不存在不做
-    def drop_edb(self):
+    # 创建edb数据库，创建cnt，cipher，grp表
+    def db_init(self, isDel):
+        if isDel is True:
+            # 查看是否先启动的server
+            sql = f"USE {self.db}"
+            self.cursor.execute(sql)
+
+            sql = f"SELECT * FROM cnt"
+            self.cursor.execute(sql)
+            result = self.cursor.fetchone()
+            # 如果server已经重建，则不用再建
+            if result is None:
+                return
+
+            # 删除edb
+            sql = f"DROP DATABASE {self.db}"
+            self.cursor.execute(sql)
+
+        # 再创建edb
+        sql = f"CREATE DATABASE {self.db}"
+        self.cursor.execute(sql)
+
+        # 转到edb
+        sql = f"USE {self.db}"
+        self.cursor.execute(sql)
+
+        self.conn.commit()
+
+        # 创建cnt，cipher，grp共3张表
+        try:
+            # 创建cnt表
+            sql = '''CREATE TABLE cnt (
+                                Kw VARCHAR(64) PRIMARY KEY,
+                                Sr INTEGER ,
+                                Cn INTEGER )'''
+            self.cursor.execute(sql)
+
+            #创建cipher表
+            sql = '''CREATE TABLE cipher (
+                                L VARCHAR(64) PRIMARY KEY,
+                                D TEXT,
+                                C TEXT)'''
+            self.cursor.execute(sql)
+
+            # 创建grp表
+            sql = '''CREATE TABLE grp (
+                                Iw VARCHAR(64) PRIMARY KEY,
+                                Cw LONGTEXT)'''
+            self.cursor.execute(sql)
+        except Exception as e:
+            print("创建表格时发生错误:", str(e))
+        self.conn.commit()
+
+    # 初始化EDB
+    def setup(self, isLoad) -> int:
+
         # 判断数据库edb是否存在
         self.cursor.execute("SHOW DATABASES")
         result = self.cursor.fetchall()
         dbs = [row[0] for row in result]
 
-        # 如果数据库edb存在，删除
-        if self.db in dbs:
-            sql = f"DROP DATABASE {self.db}"
-            # 删除edb
-            self.cursor.execute(sql)
-            sql = f"CREATE DATABASE {self.db}"
+        # 如果数据库edb不存在，则创建edb及3张表
+        if self.db not in dbs:
+            # 创建edb及3张表
+            self.db_init(False)
+            return
 
-    # 初始化EDB
-    def setup(self, isdel=True) -> int:
-        for a in self.cipher_db.values():
-            del a
-        self.cipher_db.clear()
-        self.GRP.clear()
+        # 如果不加载，则删除并重建edb
+        if isLoad is False:
+            self.db_init(True)
 
-        self.if_cleaning = False
-
-        if isdel is True:
-            self.drop_edb()
-
-            # 新建edb
-            sql = f"CREATE DATABASE {self.db}"
-            self.cursor.execute(sql)
-            self.conn.commit()
-            # 使用edb数据库
-            sql = f"USE {self.db}"
-            # 执行 SQL 语句
-            self.cursor.execute(sql)
-
-            # 设置字符集为Latin-1
-            # self.cursor.execute("SET NAMES 'latin1'")
-            # 提交事务
-            self.conn.commit()
+            for a in self.cipher_db.values():
+                del a
+            self.cipher_db.clear()
+            self.GRP.clear()
         else:
-            # 判断数据库edb是否存在
-            self.cursor.execute("SHOW DATABASES")
-            result = self.cursor.fetchall()
-            dbs = [row[0] for row in result]
-            # 如果edb不存在，新建
-            if self.db not in dbs:
-                sql = f"CREATE DATABASE {self.db}"
-                # 执行 SQL 语句
-                self.cursor.execute(sql)
-
-            # 如果存在，即直接使用edb数据库
+            # 直接加载edb
             sql = f"USE {self.db}"
-            # 执行 SQL 语句
             self.cursor.execute(sql)
 
-        sql = "SHOW TABLES LIKE 'cipher'"
-        self.cursor.execute(sql)
-        self.conn.commit()
-        result = self.cursor.fetchone()
-
-        if result is None:
-            # 创建EDB的cipher部分，条目L，D，C
-            try:
-                sql = '''CREATE TABLE cipher (
-                                L VARCHAR(64) PRIMARY KEY,
-                                D TEXT,
-                                C TEXT)'''
-                self.cursor.execute(sql)
-                self.conn.commit()
-            except Exception as e:
-                print("创建表格时发生错误:", str(e))
-
-        sql = "SHOW TABLES LIKE 'grp'"
-        self.cursor.execute(sql)
-        self.conn.commit()
-        result = self.cursor.fetchone()
-
-        if result is None:
-            # 创建EDB的group部分，条目Iw，{X，C}
-            try:
-                sql = '''CREATE TABLE grp (
-                                Iw VARCHAR(64) PRIMARY KEY,
-                                Cw LONGTEXT)'''
-                self.cursor.execute(sql)
-                self.conn.commit()
-            except Exception as e:
-                print("创建表格时发生错误:", str(e))
+            self.conn.commit()
 
         return 1
 
     # 服务器端执行搜索
     def search(self, cnt_upd: int, K: bytes, loc_grp: bytes, ret: List[bytes]) -> int:
+        # 先清空输出列表，防止结果干扰
+        ret.clear()
+
+        if cnt_upd == -1:
+            print("SE中无对应记录")
+            return
         H_rslt = bytearray(36)
         buf = bytearray(80)
         _l = bytes(64)
@@ -224,7 +224,7 @@ class SEServer:
         # group中剩余密文为有效结果
         # for it in grp.values():
         #     ret.append(it)
-        for _x,_c in _grp.items():
+        for _c in _grp.values():
             _c_out = bytes.fromhex(_c)
             ret.append(_c_out)
 
@@ -247,6 +247,15 @@ class SEServer:
         for it in T:
             del it
 
+        # 如果更新的group与返回不一致，返回错误
+        if len(ret) != len(_grp):
+            print("ERROR: search ret != group")
+
+        # 如果返回为空，删除group表中的记录
+        if _grp == {}:
+            sql = f"DELETE FROM grp WHERE Iw='{grp_name}'"
+            self.cursor.execute(sql)
+            self.conn.commit()
         return 1
 
     # 计算512-bit哈希，计算L||D'
@@ -270,22 +279,9 @@ class SEServer:
 
     # 存储添加/删除的SSE密文
     def save(self, L: bytes, D: bytes, IV: bytes, C: bytes) -> int:
-        # _l = bytes(L)
-        # _c = SECipher()
-        #
-        # _c.D = D[:]
-        # _c.IV = IV[:]
-        # _c.C = C[:]
 
-        if self.if_cleaning:
-            self.p_clean_thread.join()
-        self.if_cleaning = False
-
-        # if _l in self.cipher_db:
-        #     del self.cipher_db[_l]
-        # self.cipher_db[_l] = _c
         _L = L.hex()
-        # 判断是否存在
+        # 判断主键是否存在
         sql = f"SELECT * FROM cipher WHERE L = '{_L}'"
         self.cursor.execute(sql)
         row = self.cursor.fetchone()
@@ -433,7 +429,8 @@ def sm3_hash(msg):
         result = '%s%08x' % (result, i)
     return result
 
-def sm3_kdf(z, klen): # z为16进制表示的比特串（str），klen为密钥长度（单位byte）
+# z为16进制表示的比特串（str），klen为密钥长度（单位byte）
+def sm3_kdf(z, klen):
     klen = int(klen)
     ct = 0x00000001
     rcnt = ceil(klen/32)

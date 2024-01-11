@@ -20,7 +20,7 @@ db_config = {
 infoTypesManager=InfoTypesManager(db_config)
 plaintextLocationManager=PlaintextLocationManager(db_config)
 encryptionStatusManager=EncryptionStatusManager(db_config)
-ciphercenter = cipher_center.CipherCTR(False,True,True)
+ciphercenter = cipher_center.CipherCTR()
 
 
 def copy_and_delete_file(original_file_path, locations, new_name=None):

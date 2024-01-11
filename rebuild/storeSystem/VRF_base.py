@@ -143,5 +143,6 @@ if __name__=="__main__":
     print("Proof:",proof)
     print(f"Is valid: {is_valid}")
                 
-
+print("out",type(vrf_output))
+print("proof",type(proof))
 # overwrite_file(["./storeSystem/test/0c1d2e3f4g5h.json"], "", "sdsdfadgagaga", 1)

@@ -3,42 +3,134 @@ import json
 import copy
 from math import ceil
 from random import choice
+import pymysql
 
 # SSE的客户端部分
 class SEClient:
     # 声明SSE的密钥和本地状态计数器
-    def __init__(self, isLoad=False, isSave=False):
+    def __init__(self, isLoad=False):
         self.k_sm4 = bytearray(16)
         self.s = bytearray(16)
         self.count = {}
-        self.isSave = isSave
+
         self.isLoad = isLoad
+
+        # 本地状态也存储到数据库中cnt表中
+        self.db = 'edb'
+        # 创建mysql连接对象
+        try:
+            self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
+            # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
+            # print("成功连接到MySQL服务器！")
+        except Exception as e:
+            print("无法连接到MySQL服务器：", str(e))
+        # 获取游标对象
+        self.cursor = self.conn.cursor()
+        # 关闭自动提交事务
+        self.conn.autocommit(False)
 
         self.setup(isLoad)
 
     # 销毁类的析构函数
     def __del__(self):
-        if self.isSave is True:
-            if self.isLoad is False:
-                self.save_K()
-            self.save_State()
+        # 如果非加载构建SE，保存密钥
+        if self.isLoad is False:
+            self.save_K()
+
+        # 关闭mysql连接
+        if self.cursor:
+            self.cursor.close()
+        if self.conn.open:
+            self.conn.close()
 
         for it in self.count:
             del it
 
+    # 创建edb数据库，创建cnt，cipher，grp表
+    def db_init(self, isDel):
+        if isDel is True:
+            # 查看是否先启动的server
+            sql = f"USE {self.db}"
+            self.cursor.execute(sql)
+
+            sql = f"SELECT * FROM cnt"
+            self.cursor.execute(sql)
+            result = self.cursor.fetchone()
+            # 如果server已经重建，则不用再建
+            if result is None:
+                return
+
+            # 删除edb
+            sql = f"DROP DATABASE {self.db}"
+            self.cursor.execute(sql)
+
+        # 再创建edb
+        sql = f"CREATE DATABASE {self.db}"
+        self.cursor.execute(sql)
+
+        # 转到edb
+        sql = f"USE {self.db}"
+        self.cursor.execute(sql)
+
+        self.conn.commit()
+
+        # 创建cnt，cipher，grp共3张表
+        try:
+            # 创建cnt表
+            sql = '''CREATE TABLE cnt (
+                                Kw VARCHAR(64) PRIMARY KEY,
+                                Sr INTEGER ,
+                                Cn INTEGER )'''
+            self.cursor.execute(sql)
+
+            #创建cipher表
+            sql = '''CREATE TABLE cipher (
+                                L VARCHAR(64) PRIMARY KEY,
+                                D TEXT,
+                                C TEXT)'''
+            self.cursor.execute(sql)
+
+            # 创建grp表
+            sql = '''CREATE TABLE grp (
+                                Iw VARCHAR(64) PRIMARY KEY,
+                                Cw LONGTEXT)'''
+            self.cursor.execute(sql)
+        except Exception as e:
+            print("创建表格时发生错误:", str(e))
+        self.conn.commit()
+
+
     # 初始化SSE的密钥和本地状态计数器
     def setup(self, isLoad=False):
-        # with open("/dev/urandom", "rb") as f_rand:
-        #     f_rand.readinto(self.k_sm4)
-        #     f_rand.readinto(self.s)
-        self.k_sm4=os.urandom(16)
-        self.s=os.urandom(16)
 
-        self.count = {}
+        # 判断数据库edb是否存在
+        self.cursor.execute("SHOW DATABASES")
+        result = self.cursor.fetchall()
+        dbs = [row[0] for row in result]
 
-        if isLoad is True:
+        # 如果数据库edb不存在，则创建edb及3张表
+        if self.db not in dbs:
+            # 创建edb及3张表
+            self.db_init(False)
+            # 数据库不存在时，SE密钥强制更换
+            self.isLoad = False
+            self.k_sm4 = os.urandom(16)
+            self.s = os.urandom(16)
+            return
+
+        # 如果不加载，则删除并重建edb
+        if isLoad is False:
+            self.db_init(True)
+            # 初始化密钥
+            self.k_sm4 = os.urandom(16)
+            self.s = os.urandom(16)
+        else:
             self.set_K()
-            self.load_State()
+            # 直接加载edb
+            sql = f"USE {self.db}"
+            self.cursor.execute(sql)
+
+            self.conn.commit()
 
     # 装载指定密钥
     def set_K(self, path="./se_key.pem"):
@@ -54,6 +146,10 @@ class SEClient:
 
     # 存储当前密钥
     def save_K(self, path="./se_key.pem"):
+        # 密钥文件存在时，先删除
+        if os.path.exists(path):
+            os.remove(path)
+        # 密钥存储到指定路径
         if path == "./se_key.pem":
             fw = os.open(path, os.O_WRONLY|os.O_CREAT)
             os.write(fw, self.k_sm4)
@@ -65,12 +161,16 @@ class SEClient:
                 os.write(fw, self.k_sm4)
                 os.write(fw, self.s)
             except Exception as e:
-                print("文件打开失败：", str(e))
+                print(path, "文件打开失败：", str(e))
             finally:
                 os.close(fw)
 
     # 存储当前本地状态
     def save_State(self, path="./local_state.json"):
+        # 文件存在时，先删除
+        if os.path.exists(path):
+            os.remove(path)
+
         json_str = json.dumps(self.count)
         if path == "./local_state.json":
             fw = os.open(path, os.O_WRONLY|os.O_CREAT)
@@ -81,7 +181,7 @@ class SEClient:
                 fw = os.open(path, os.O_WRONLY|os.O_CREAT)
                 os.write(fw, json_str.encode())
             except Exception as e:
-                print("文件打开失败：", str(e))
+                print(path, "文件打开失败：", str(e))
             finally:
                 os.close(fw)
 
@@ -138,6 +238,9 @@ class SEClient:
 
     # 解密文件存储地址
     def decrypt(self, enc_ind, result):
+        # 先清空输出，防止结果被干扰
+        result.clear()
+
         sm4_dec = CryptSM4()
 
         sm4_dec.set_key(self.k_sm4, SM4_DECRYPT)
@@ -196,16 +299,34 @@ class SEClient:
         cip_id = bytearray(64)
         buf = bytearray(64)
 
-        if keyword not in self.count:
-            self.count[keyword] = {'cnt_srch': 0, 'cnt_upd': 0}
+        # 查询计数器状态
+        sql = f"SELECT * FROM cnt WHERE Kw=%s"
+        self.cursor.execute(sql, keyword)
 
-        self.count[keyword]['cnt_upd'] += 1
-        cnt_upd = self.count[keyword]['cnt_upd']
+        result = self.cursor.fetchone()
 
-        self._prf_F(keyword, self.count[keyword]['cnt_srch'], K)
+        if result is None:
+            _sr = 0
+            _cn = 1
+            sql = f"INSERT INTO cnt (Kw, Sr, Cn) VALUES (%s,%s,%s)"
+            self.cursor.execute(sql, (keyword, _sr, _cn))
+        else:
+            _sr = result[1]
+            _cn = result[2] + 1
+            sql = f"UPDATE cnt SET Sr=%s,Cn=%s WHERE Kw=%s"
+            self.cursor.execute(sql, (_sr, _cn, keyword))
+        self.conn.commit()
+
+        # if keyword not in self.count:
+        #     self.count[keyword] = {'cnt_srch': 0, 'cnt_upd': 0}
+
+        # self.count[keyword]['cnt_upd'] += 1
+        # cnt_upd = self.count[keyword]['cnt_upd']
+
+        self._prf_F(keyword, _sr, K)
         self._prf_F(keyword, 0, K_1, True)
 
-        self._hash_H(K, cnt_upd, buf)
+        self._hash_H(K, _cn, buf)
         L[:] = buf[:32]
         D[:] = buf[32:64]
 
@@ -221,22 +342,35 @@ class SEClient:
 
     # 生成SSE搜索令牌
     def trapdoor(self, keyword, cnt_upd, K, loc_grp):
-        c = {'cnt_srch': 0, 'cnt_upd': 0}
+        # c = {'cnt_srch': 0, 'cnt_upd': 0}
         K_1 = bytearray(32)
 
-        if keyword not in self.count:
+        # 查询计数器状态
+        sql = f"SELECT * FROM cnt WHERE Kw=%s"
+        self.cursor.execute(sql, keyword)
+
+        result = self.cursor.fetchone()
+
+        if result is None:
+            print(keyword, "无匹配记录")
+            cnt_upd[0] = -1
             return 0
+        # if keyword not in self.count:
+        #     return 0
 
-        c = self.count[keyword]
+        _sr = result[1]
+        _cn = result[2]
 
-        self._prf_F(keyword, c['cnt_srch'], K)
+        self._prf_F(keyword, _sr, K)
         self._prf_F(keyword, 0, K_1, True)
 
-        c['cnt_srch'] += 1
-        cnt_upd[0] = c['cnt_upd']
-        c['cnt_upd'] = 0
+        _sr += 1
+        cnt_upd[0] = _cn
+        _cn = 0
 
-        self.count[keyword] = c
+        sql = f"UPDATE cnt SET Sr=%s,Cn=%s WHERE Kw=%s"
+        self.cursor.execute(sql, (_sr, _cn, keyword))
+        self.conn.commit()
 
         self._hash_G(K_1, keyword, "", loc_grp)
 
@@ -389,7 +523,8 @@ def sm3_hash(msg):
         result = '%s%08x' % (result, i)
     return result
 
-def sm3_kdf(z, klen): # z为16进制表示的比特串（str），klen为密钥长度（单位byte）
+# z为16进制表示的比特串（str），klen为密钥长度（单位byte）
+def sm3_kdf(z, klen):
     klen = int(klen)
     ct = 0x00000001
     rcnt = ceil(klen/32)
@@ -423,10 +558,10 @@ SM4_BOXES_TABLE = [
     0x48,
 ]
 
-# System parameter
+# 系统参数
 SM4_FK = [0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc]
 
-# fixed parameter
+# 固定参数
 SM4_CK = [
     0x00070e15, 0x1c232a31, 0x383f464d, 0x545b6269,
     0x70777e85, 0x8c939aa1, 0xa8afb6bd, 0xc4cbd2d9,
@@ -444,16 +579,17 @@ SM4_DECRYPT = 1
 PKCS7 = 0
 ZERO = 1
 
+# 国密SM4加密
 class CryptSM4(object):
 
     def __init__(self, mode=SM4_ENCRYPT, padding_mode=PKCS7):
         self.sk = [0] * 32
         self.mode = mode
         self.padding_mode = padding_mode
-    # Calculating round encryption key.
-    # args:    [in] a: a is a 32 bits unsigned value;
-    # return: sk[i]: i{0,1,2,3,...31}.
 
+    # 计算轮密钥
+    # 输入：32bit无符号值
+    # 输出：32字节的密钥
     @classmethod
     def _round_key(cls, ka):
         b = [0, 0, 0, 0]
@@ -466,19 +602,13 @@ class CryptSM4(object):
         rk = bb ^ (rotl(bb, 13)) ^ (rotl(bb, 23))
         return rk
 
-    # Calculating and getting encryption/decryption contents.
-    # args:    [in] x0: original contents;
-    # args:    [in] x1: original contents;
-    # args:    [in] x2: original contents;
-    # args:    [in] x3: original contents;
-    # args:    [in] rk: encryption/decryption key;
-    # return the contents of encryption/decryption contents.
+    # 输入：x0,x1,x2,x3是原内容，rk是加密/解密密钥
+    # 计算并得到加密/解密内容
     @classmethod
     def _f(cls, x0, x1, x2, x3, rk):
-        # "T algorithm" == "L algorithm" + "t algorithm".
-        # args:    [in] a: a is a 32 bits unsigned value;
-        # return: c: c is calculated with line algorithm "L" and nonline
-        # algorithm "t"
+        # "T 算法" == "L 算法" + "t 算法".
+        # 输入：32 bits 无符号数值
+        # 输出：c: c用线性算法"L"和非线性算法"t"计算
         def _sm4_l_t(ka):
             b = [0, 0, 0, 0]
             a = put_uint32_be(ka)
@@ -503,6 +633,7 @@ class CryptSM4(object):
             return c
         return (x0 ^ _sm4_l_t(x1 ^ x2 ^ x3 ^ rk))
 
+    # 初始化密钥
     def set_key(self, key, mode):
         key = bytes_to_list(key)
         MK = [0, 0, 0, 0]
@@ -523,6 +654,7 @@ class CryptSM4(object):
                 self.sk[idx] = self.sk[31 - idx]
                 self.sk[31 - idx] = t
 
+    # 一轮计算
     def one_round(self, sk, in_put):
         out_put = []
         ulbuf = [0] * 36
@@ -543,8 +675,9 @@ class CryptSM4(object):
         out_put += put_uint32_be(ulbuf[32])
         return out_put
 
+    # ECB加密模式
     def crypt_ecb(self, input_data):
-        # SM4-ECB block encryption/decryption
+
         input_data = bytes_to_list(input_data)
         if self.mode == SM4_ENCRYPT:
             if self.padding_mode == PKCS7:
@@ -566,8 +699,9 @@ class CryptSM4(object):
                 return list_to_bytes(zero_unpadding(output_data))
         return list_to_bytes(output_data)
 
+    # CBC加密模式
     def crypt_cbc(self, iv, input_data):
-        # SM4-CBC buffer encryption/decryption
+
         i = 0
         output_data = []
         tmp_input = [0] * 16
@@ -595,7 +729,7 @@ class CryptSM4(object):
 # 调试样例
 # 正确输出为：Decrypted result: [b'/Users/xx/xx/xx/xx/xx/xx/xx/xx.json', b'/Users/xx/xx/xx/xx/xx/xx/xx/xx.json']
 if __name__ == "__main__":
-    client = SEClient(isLoad=True,isSave=True)
+    client = SEClient(isLoad=False)
     # client.setup()
 
     L = bytearray(32)
