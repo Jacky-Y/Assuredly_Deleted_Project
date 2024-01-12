@@ -61,8 +61,17 @@ if __name__=="__main__":
 
     # 使用示例
     # private_key, public_key = key_generation()
-    message = 'Hello, VRF!'
-    vrf_output, proof = compute_vrf(loaded_private_key, message)
+    message = '1517b1519fec35d2'
+    # vrf_output, proof = compute_vrf(loaded_private_key, message)
+
+
+
+    vrf_output= b'2d244d385290bf52e91fae0a3d95bc3798b9c6303aa5198611411d592c904aa1'
+
+    print(vrf_output.decode(),"##")
+
+    proof=b'fa5e478c118d59075062af3e168fe43b064d5247fa73b8283691903e03ad54c754f2668c962b493e471f2013f17cf148c242b7e54c7f4561d98678556f3a1f2a'
+
     is_valid = verify_vrf(loaded_public_key, message, vrf_output, proof)
 
     print(f"Private Key: {loaded_private_key}")

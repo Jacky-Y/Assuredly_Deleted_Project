@@ -7,6 +7,7 @@ import shutil
 import random
 import zipfile
 import tempfile
+import argparse
 
 from overwirter_class import JsonOverwriter
 from overwirter_class import TextOverwriter
@@ -913,12 +914,23 @@ def retention_status2():
             else:
                 app.logger.warning(f"File not found: {full_path}")
 
-        # 添加证明文件（如果需要）
-        files_to_send.extend(['duplicationDel_proof.json', 'keyDel_proof.json'])
+        # 添加证明文件 duplicationDel_proof.json
+        proof_file = 'duplicationDel_proof.json'
+        if os.path.exists(proof_file):
+            files_to_send.append(proof_file)
+        else:
+            app.logger.warning(f"Proof file not found: {proof_file}")
 
         if not files_to_send:
             app.logger.error("No files found for given paths.")
             return {'error': 'No files found'}, 404
+
+        # # 添加证明文件（如果需要）
+        # files_to_send.extend(['duplicationDel_proof.json', 'keyDel_proof.json'])
+
+        # if not files_to_send:
+        #     app.logger.error("No files found for given paths.")
+        #     return {'error': 'No files found'}, 404
 
         # 创建ZIP文件并发送
         with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_zip:
@@ -930,11 +942,54 @@ def retention_status2():
     except Exception as e:
         app.logger.error(f"Error processing request: {e}")
         return {'error': 'Internal Server Error'}, 500
+    
+# 函数：parse_arguments
+# 功能：解析命令行参数
+# 输入：
+#    无
+# 输出：
+#    argparse.Namespace - 解析后的命令行参数
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Flask Node Startup Configuration')
+    parser.add_argument('system_id', help='Name of the node to start')
+    return parser.parse_args()
+
+
+# 函数：load_store_config
+# 功能：加载指定系统标识的配置信息
+# 输入：
+#    system_id: str - 系统标识符
+# 输出：
+#    dict 或 None - 成功时返回配置信息字典，失败时返回 None
+def load_store_config(system_id):
+    try:
+        with open('../deleteSystem/config.json', 'r') as file:
+            config = json.load(file)
+            for node in config['storeSystem']:
+                if node['system_id'] == system_id:
+                    return node
+    except FileNotFoundError:
+        print("配置文件未找到。请确保 config.json 文件在正确的位置。")
+    except json.JSONDecodeError:
+        print("配置文件格式错误。请确保它是有效的 JSON 格式。")
+    except Exception as e:
+        print(f"读取配置文件时发生错误：{e}")
+
+    return None
+
 
 
 if __name__ == '__main__':
 
     # load_file(path="./1.png",is_encrypted=1,store_paths=['./e','./f','./c','./d'],threshold=[3,2],keywords=["abc"])
     # ciphercenter.keyword_search("abc","./c")
-    # app.run(host="172.18.0.56",port=7000)
-    app.run(port=7000)
+    args = parse_arguments()
+    store_system_config = load_store_config(args.system_id)
+    if store_system_config:
+        app.config['store_system_ip'] = store_system_config['ip']
+        app.config['store_system_port'] = store_system_config['port']
+    else:
+        print("no configuration found for this node")
+    app.run(host=app.config['store_system_ip'],port=app.config['store_system_port'])
+    # app.run(host="172.18.0.209",port=7000)
+    # app.run(port=7000)

@@ -31,7 +31,11 @@ def generate_delete_level(max_level):
 # 输出：
 #    tuple - 包含两个字典，分别代表普通数据和密钥的删除命令。
 
-def generate_delete_commands(store_system_port, max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType,affairsID):
+def generate_delete_commands(store_system_ip,store_system_port, max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType,affairsID):
+    # # 检查 store_system_port 是否为整数
+    # if not isinstance(store_system_port, int):
+    #     raise TypeError("store_system_port must be an integer")
+
         # 检查 store_system_port 是否为整数
     if not isinstance(store_system_port, int):
         raise TypeError("store_system_port must be an integer")

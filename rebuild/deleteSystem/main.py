@@ -162,13 +162,13 @@ def parse_arguments():
     parser.add_argument('system_id', help='Name of the node to start')
     return parser.parse_args()
 
-# 函数：load_config
+# 函数：load_del_config
 # 功能：加载指定系统标识的配置信息
 # 输入：
 #    system_id: str - 系统标识符
 # 输出：
 #    dict 或 None - 成功时返回配置信息字典，失败时返回 None
-def load_config(system_id):
+def load_del_config(system_id):
     try:
         with open('config.json', 'r') as file:
             config = json.load(file)
@@ -184,22 +184,47 @@ def load_config(system_id):
 
     return None
 
-# 函数：load_system_configs
+
+# 函数：load_store_config
+# 功能：加载指定系统标识的配置信息
+# 输入：
+#    system_id: str - 系统标识符
+# 输出：
+#    dict 或 None - 成功时返回配置信息字典，失败时返回 None
+def load_store_config(system_id):
+    try:
+        with open('config.json', 'r') as file:
+            config = json.load(file)
+            for node in config['storeSystem']:
+                if node['system_id'] == system_id:
+                    return node
+    except FileNotFoundError:
+        print("配置文件未找到。请确保 config.json 文件在正确的位置。")
+    except json.JSONDecodeError:
+        print("配置文件格式错误。请确保它是有效的 JSON 格式。")
+    except Exception as e:
+        print(f"读取配置文件时发生错误：{e}")
+
+    return None
+
+
+
+# 函数：load_classify_config
 # 功能：加载系统的配置信息
 # 输入：
 #    无
 # 输出：
 #    tuple - 包含分类系统和存储系统配置的元组，失败时返回 (None, None)
-def load_system_configs():
+def load_classify_config():
     try:
         with open('config.json', 'r') as file:
             config = json.load(file)
 
             # 提取 classifySystem 和 storeSystem 的配置
             classify_system_config = config.get("classifySystem")
-            store_system_config = config.get("storeSystem")
+            # store_system_config = config.get("storeSystem")
 
-            return classify_system_config, store_system_config
+            return classify_system_config
 
     except FileNotFoundError:
         print("配置文件未找到。请确保 config.json 文件在正确的位置。")
@@ -220,7 +245,7 @@ def load_system_configs():
 #    无直接输出，但会向根节点发送 POST 请求
 def send_deletion_message(rootNode,system_id, final_status):
     # 从配置文件中加载根节点信息
-    root_node_config = load_config(rootNode)
+    root_node_config = load_del_config(rootNode)
     if root_node_config is None:
         print("无法加载根节点配置。")
         return
@@ -513,7 +538,7 @@ def get_instruction():
         print("Classification Information")
         print("------------------------------")
 
-        sorted_data, max_level = fetch_and_process_data(infoID,app.config['store_system_port'],app.config['classify_system_ip'],app.config['classify_system_port'])
+        sorted_data, max_level = fetch_and_process_data(infoID,app.config['store_system_ip'],app.config['store_system_port'],app.config['classify_system_ip'],app.config['classify_system_port'])
 
         print(f"Max Sensitive Level: {max_level}")
         print(f"Classified Information: {sorted_data}")
@@ -525,7 +550,7 @@ def get_instruction():
         print("Duplication and Key Information")
         print("------------------------------")
 
-        locations,key_locations,key_status=query_data_and_key_locations(infoID,app.config['store_system_port'])
+        locations,key_locations,key_status=query_data_and_key_locations(infoID,app.config['store_system_ip'],app.config['store_system_port'])
         print(f"Locations for infoID {infoID}: {locations}")
         print(f"Key locations for infoID {infoID}: {key_locations}")
         print(f"Key status for infoID {infoID}: {key_status}")
@@ -538,7 +563,7 @@ def get_instruction():
         print("Delete Commands")
         print("------------------------------")
 
-        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType,affairsID)
+        duplicationDelCommand,keyDelCommand=generate_delete_commands(app.config['store_system_ip'],app.config['store_system_port'], max_level, infoID, locations, key_locations, deleteGranularity, deleteMethod,infoType,affairsID)
 
         duplicationDelCommand_str=generate_delete_command_str(duplicationDelCommand)
         print(f"Duplication Delete Command: {duplicationDelCommand_str}")
@@ -563,7 +588,7 @@ def get_instruction():
         # 初始化最终状态为成功
         final_status = "success"
 
-        final_status,deletePerformTime=deliver_delete_commands(app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,key_status)
+        final_status,deletePerformTime=deliver_delete_commands(app.config['store_system_ip'],app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,key_status)
         
 
 
@@ -770,8 +795,9 @@ def get_instruction():
 
 if __name__ == "__main__":
     args = parse_arguments()
-    node_config = load_config(args.system_id)
-    classify_system_config, store_system_config = load_system_configs()
+    node_config = load_del_config(args.system_id)
+    classify_system_config = load_classify_config()
+    store_system_config = load_store_config(args.system_id)
 
     if node_config:
         app.config['SYSTEM_ID'] = args.system_id  # Store system_id in app.config
@@ -787,7 +813,9 @@ if __name__ == "__main__":
 
         # Store storeSystem configuration in app.config
         if store_system_config:
+            app.config['store_system_ip'] = store_system_config['ip']
             app.config['store_system_port'] = store_system_config['port']
+
         else:
             print("No configuration found for storeSystem")
 

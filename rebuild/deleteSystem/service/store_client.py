@@ -325,7 +325,7 @@ class StorageSystemClient:
 class DataServiceError(Exception):
     """自定义异常类，用于处理数据服务中的错误。"""
 
-def query_data_and_key_locations(infoID, store_system_port):
+def query_data_and_key_locations(infoID, store_system_ip,store_system_port):
     """
     查询指定infoID的副本位置和密钥位置信息。
 
@@ -342,7 +342,7 @@ def query_data_and_key_locations(infoID, store_system_port):
     Raises:
     - DataServiceError: 在查询过程中遇到的任何错误。
     """
-    client = StorageSystemClient(f"http://127.0.0.1:{store_system_port}")
+    client = StorageSystemClient(f"http://{store_system_ip}:{store_system_port}")
 
     try:
         # 查询infoID的存储状态

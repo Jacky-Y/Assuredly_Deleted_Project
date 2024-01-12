@@ -15,7 +15,7 @@ from overwirter_class import VideoOverwriter
 
 class SecretShare(object):
     # 生成n个密钥分片
-    @staticmethod
+    @staticmethod  
     def generate_shares(secret, t, n):
         if t == n:
             res = bytearray(16)

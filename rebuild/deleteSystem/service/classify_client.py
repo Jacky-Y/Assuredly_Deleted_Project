@@ -2,7 +2,7 @@ import requests
 from requests.exceptions import RequestException
 import json
 
-def fetch_and_process_data(infoID, store_system_port, classify_system_ip, classify_system_port):
+def fetch_and_process_data(infoID, store_system_ip,store_system_port, classify_system_ip, classify_system_port):
     """
     从两个不同的系统（存储系统和分类系统）获取并处理数据。
     
@@ -45,7 +45,7 @@ def fetch_and_process_data(infoID, store_system_port, classify_system_ip, classi
     try:
         # 从存储系统获取信息类型
         # 构建请求URL和头部信息
-        url_get_info_type = f"http://127.0.0.1:{store_system_port}/getInfoType"
+        url_get_info_type = f"http://{store_system_ip}:{store_system_port}/getInfoType"
         headers_get_info_type = {"Content-Type": "application/json"}
         data_get_info_type = {"infoID": infoID}
 

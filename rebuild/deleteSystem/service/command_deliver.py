@@ -356,7 +356,7 @@ class TimeoutException(Exception):
         super().__init__(message)
         self.error_data = error_data
 
-def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,status):
+def deliver_delete_commands(store_system_ip,store_system_port, duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,status):
     # 参数类型检查
     # 检查 store_system_port 是否为整数类型
     # store_system_port: 存储系统的端口号，应为整数类型
@@ -406,7 +406,7 @@ def deliver_delete_commands(store_system_port, duplicationDelCommand, keyDelComm
     send_time = datetime.now()
 
     # 创建 StorageSystemClient 实例
-    client = StorageSystemClient(f"http://127.0.0.1:{store_system_port}")
+    client = StorageSystemClient(f"http://{store_system_ip}:{store_system_port}")
 
     # 发送重复删除命令并处理响应
     duplication_response = client.send_dup_del_command(duplicationDelCommand,status)
