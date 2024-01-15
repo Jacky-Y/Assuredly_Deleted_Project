@@ -8729,7 +8729,7 @@ body {
   display: flex;
   min-height: 100vh; }
 
-.dash-app {
+/* .dash-app {
   display: -webkit-box;
   display: -webkit-flex;
   display: -ms-flexbox;
@@ -8748,7 +8748,24 @@ body {
     .dash-app {
       margin-left: 238px; }
       .dash-compact .dash-app {
-        margin-left: 0; } }
+        margin-left: 0; } } */
+
+.dash-app {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 2;
+  margin-top: 84px; /* Adjust this as needed */
+}
+
+@media (min-width: 992px) {
+  .dash-app {
+    margin-left: 0; /* Set margin to 0 to fill the space left by the sidebar */
+  }
+  .dash-compact .dash-app {
+    margin-left: 0; /* Ensures .dash-app has no left margin when .dash-nav is compacted/hidden */
+  }
+}
+        
 
 .dash-content {
   -webkit-box-flex: 2;
@@ -9082,6 +9099,20 @@ body {
   font-size: 11px;
   background: #FF5A00;
   color: #fff; }
+
+  /* 这将只是将文本水平居中 */
+h1 {
+  text-align: center;
+}
+
+/* 如果您还想要垂直居中，假设h1的父容器是 .header-container */
+.header-container {
+  display: flex;
+  justify-content: center; /* 水平居中 */
+  align-items: center; /* 垂直居中 */
+  height: 10px; /* 或者是您想要的高度 */
+}
+
 
 .dash-toolbar {
   min-height: 84px;

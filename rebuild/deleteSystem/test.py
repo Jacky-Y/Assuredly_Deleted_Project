@@ -1,4 +1,5 @@
 import binascii
+from datetime import datetime
 
 #导入国密算法sm4包
 from utils import sm3
@@ -31,7 +32,15 @@ def bytes2hex(bytesData):
 
 # main 
 if __name__ == '__main__':
-    print("main begin");
-    message = b"123456" # bytes类型
-    sm3_hash(message);
+    # print("main begin");
+    # message = b"123456" # bytes类型
+    # sm3_hash(message);\
+    time_str="2024-01-10 16:46:38 to 2024-01-12 16:46:38"
+    if 'to' in time_str:
+        start_time_str, end_time_str = time_str.split(' to ')
+        start_time = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S')
+        end_time = datetime.strptime(end_time_str, '%Y-%m-%d %H:%M:%S')
+    print(start_time)
+    print(end_time)
 
+    
