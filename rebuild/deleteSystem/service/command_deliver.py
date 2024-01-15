@@ -457,7 +457,8 @@ def deliver_delete_commands(store_system_ip,store_system_port, duplicationDelCom
         raise DeleteFailException("Delete operation failed.", error_data)
 
     # 检查操作是否超时
-    if (datetime.now() - send_time).total_seconds() > preset_duration_seconds:
+    used_time=datetime.now() - send_time
+    if (used_time).total_seconds() > preset_duration_seconds:
         error_data = {
             "data": {
                 "DataType": 0x4102,
@@ -467,7 +468,7 @@ def deliver_delete_commands(store_system_ip,store_system_port, duplicationDelCom
                     "deleteInstruction": delete_instruction_str,
                     "deletePerformer": deletePerformer,
                     "deletePerformTime": deletePerformTime,
-                    "timeout": (datetime.now() - send_time).total_seconds()
+                    "timeout": (used_time).total_seconds()
                 }
             }
         }
@@ -477,8 +478,8 @@ def deliver_delete_commands(store_system_ip,store_system_port, duplicationDelCom
     # 返回删除操作的最终结果
     if final_status == "success":
         print("Final result: Success!")
-        return "success", deletePerformTime
+        return "success", deletePerformTime,used_time
     else:
         print("Final result: Failed!")
-        return "fail", deletePerformTime
+        return "fail", deletePerformTime,used_time
 

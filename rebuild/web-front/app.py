@@ -3,6 +3,9 @@ from flask_socketio import SocketIO, emit
 import threading
 import time
 from flask import Flask, request, jsonify
+from model.del_info_model import DeleteInfoModel
+
+deleteinfomodel=DeleteInfoModel("127.0.0.1","root","123456","combinedLog")
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*')
@@ -18,8 +21,15 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 @app.route('/log', methods=['POST'])
 def receive_log():
     log_data = request.json
+    print(log_data)
+    deleteinfomodel.add_record(log_data)
+
     socketio.emit('new_log', log_data, namespace='/')  # 发送给所有连接的客户端
     return jsonify({"status": "success"}), 200
+
+@app.route('/getStatistic', methods=['POST'])
+def getStatistic():
+    pass
 
 @app.route('/')
 def index():

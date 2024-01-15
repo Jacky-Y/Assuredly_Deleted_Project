@@ -16,7 +16,7 @@ from service.store_client import query_data_and_key_locations
 from service.command_gen import generate_delete_commands
 from service.command_deliver import deliver_delete_commands
 from service.log_save import save_operation_log
-
+from service.log_send import send_log
 from service.command_deliver import TimeoutException
 from service.command_deliver import DeleteFailException
 
@@ -588,8 +588,8 @@ def get_instruction():
         # 初始化最终状态为成功
         final_status = "success"
 
-        final_status,deletePerformTime=deliver_delete_commands(app.config['store_system_ip'],app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,key_status)
-        
+        final_status,deletePerformTime,used_time=deliver_delete_commands(app.config['store_system_ip'],app.config['store_system_port'], duplicationDelCommand, keyDelCommand, infoID, affairsID, delete_instruction_str, deletePerformer, preset_duration_seconds,key_status)
+    
 
 
 
@@ -699,26 +699,35 @@ def get_instruction():
 
         print(fullEvidence)
 
-        # 确保log文件夹存在，不存在则创建
-        log_dir = "log"
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
 
-        # 检查 infoID 是否存在
-        if infoID:
-            # 构建目标文件路径
-            target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
+#########################删除操作信息汇总到聚合服务器#########################
+        
+        del_info=fullEvidence
+        del_info['usedTime']=str(used_time)
+        del_info['Success']=True
+        send_log(del_info,True,"127.0.0.1",5555)
+        
 
-            # 打开文件并写入操作日志
-            with open(target_file_path, 'w', encoding='utf-8') as target_file:
-                # 使用 json.dump 将操作日志转换为 JSON 格式并保存
-                json.dump(fullEvidence, target_file, ensure_ascii=False, indent=4)
+        # # 确保log文件夹存在，不存在则创建
+        # log_dir = "log"
+        # if not os.path.exists(log_dir):
+        #     os.makedirs(log_dir)
 
-            # 输出保存成功的消息
-            print(f"File saved as {target_file_path}")
-        else:
-            # infoID 不存在时的错误提示
-            print("infoID not found in operation_log dictionary")
+        # # 检查 infoID 是否存在
+        # if infoID:
+        #     # 构建目标文件路径
+        #     target_file_path = os.path.join(log_dir, f"{infoID}_{affairsID}.json")
+
+        #     # 打开文件并写入操作日志
+        #     with open(target_file_path, 'w', encoding='utf-8') as target_file:
+        #         # 使用 json.dump 将操作日志转换为 JSON 格式并保存
+        #         json.dump(fullEvidence, target_file, ensure_ascii=False, indent=4)
+
+        #     # 输出保存成功的消息
+        #     print(f"File saved as {target_file_path}")
+        # else:
+        #     # infoID 不存在时的错误提示
+        #     print("infoID not found in operation_log dictionary")
 
 
         save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)

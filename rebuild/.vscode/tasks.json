@@ -22,7 +22,7 @@
             "label": "Run Python Script 2",
             "type": "shell",
             "command": "python",
-            "args": ["main.py"],
+            "args": ["main.py","b1000"],
             "options": {
                 "cwd": "${workspaceFolder}/deleteSystem"
             },
@@ -34,7 +34,7 @@
             "label": "Run Python Script 3",
             "type": "shell",
             "command": "python",
-            "args": ["storeSystem.py"],
+            "args": ["storeSystem.py","b1000"],
             "options": {
                 "cwd": "${workspaceFolder}/storeSystem"
             },

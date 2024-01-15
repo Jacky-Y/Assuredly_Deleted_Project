@@ -34,8 +34,8 @@ class SEClient:
     # 销毁类的析构函数
     def __del__(self):
         # 如果非加载构建SE，保存密钥
-        if self.isLoad is False:
-            self.save_K()
+        # if self.isLoad is False:
+        #     self.save_K()
 
         # 关闭mysql连接
         if self.cursor:
@@ -116,6 +116,7 @@ class SEClient:
             self.isLoad = False
             self.k_sm4 = os.urandom(16)
             self.s = os.urandom(16)
+            self.save_K()
             return
 
         # 如果不加载，则删除并重建edb
@@ -124,6 +125,7 @@ class SEClient:
             # 初始化密钥
             self.k_sm4 = os.urandom(16)
             self.s = os.urandom(16)
+            self.save_K()
         else:
             self.set_K()
             # 直接加载edb
