@@ -4,10 +4,12 @@ import threading
 import time
 from flask import Flask, request, jsonify
 from model.del_info_model import DeleteInfoModel
+from flask_cors import CORS
 
 deleteinfomodel=DeleteInfoModel("127.0.0.1","root","123456","combinedLog")
 
 app = Flask(__name__)
+CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 # def log_handler():
@@ -29,7 +31,16 @@ def receive_log():
 
 @app.route('/getStatistic', methods=['POST'])
 def getStatistic():
-    pass
+    success_ratio = deleteinfomodel.success_ratio()
+    key_success_ratio = deleteinfomodel.success_ratio_with_deleteKeyinfoID()
+    average_used_time = deleteinfomodel.average_used_time()
+
+    return jsonify({
+        "success_ratio": success_ratio,
+        "key_success_ratio": key_success_ratio,
+        "average_used_time": average_used_time
+    })
+
 
 @app.route('/')
 def index():

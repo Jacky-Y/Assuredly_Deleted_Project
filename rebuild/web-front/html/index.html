@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.4.1/css/all.css" integrity="sha384-5sAR7xN1Nv6T6+dT2mhtzEpVJvfS3NScPQTrOxhwjIuvcA67KV2R5Jz6kr4abQsz" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/css?family=Nunito:400,600|Open+Sans:400,600,700" rel="stylesheet">
     <link rel="stylesheet" href="../css/spur.css">
-    <script src="../js/Chart.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.bundle.min.js"></script>
     <script src="../js/chart-js-config.js"></script>
     <title>Spur - A Bootstrap Admin Template</title>
 
@@ -189,28 +189,22 @@
                                 <div class="card-body ">
                                     <!-- 删除时间 -->
                                     <!-- <button type="button" class="btn btn-secondary mb-1">Secondary</button> -->
-                                    <h6>操作删除执行成功比例</h6>
+                                    <h6>操作删除执行成功比例: <span id="success-ratio">0%</span></h6>
                                     <div class="progress mb-1">
-                                        <div class="progress-bar" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress-bar" id="success-ratio-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                     <br>
-                                    <h6>密钥删除执行成功比例</h6>
+                                    <h6>密钥删除执行成功比例: <span id="key-success-ratio">0%</span></h6>
                                     <div class="progress mb-1">
-                                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress-bar bg-primary" id="key-success-ratio-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                     <br>
-                                    <h6>删除平均执行时间</h6>
+                                    <h6>删除平均执行时间: <span id="average-used-time">0</span> 秒</h6>
                                     <div class="progress mb-1">
-                                        <div class="progress-bar bg-success" role="progressbar" style="width: 50%" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                        <div class="progress-bar bg-success" id="average-used-time-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                                     </div>
                                     <br>
-                                    <button type="button" class="btn btn-primary mb-1">查看统计信息</button>
-                                    <!-- <div class="progress mb-1">
-                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 75%" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div>
-                                    <div class="progress mb-1">
-                                        <div class="progress-bar bg-danger" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
-                                    </div> -->
+                                    <button type="button" id="fetch-stats" class="btn btn-primary mb-1">查看统计信息</button>
                                 </div>
                             </div>
                             <!-- <div class="card spur-card">
@@ -335,13 +329,13 @@
             </main>
         </div>
     </div>
-    <script src="../js/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-    <script src="../js/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="../js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="../js/spur.js"></script>
 
     <!-- WebSocket JavaScript -->
-    <script src="../js/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
     <!-- WebSocket JavaScript -->
     <!-- WebSocket JavaScript -->
     <script type="text/javascript">
@@ -443,7 +437,32 @@
                 updateCounts();
         });
     </script>
-    
+    <script type="text/javascript">
+        document.getElementById('fetch-stats').addEventListener('click', function() {
+    fetch('http://127.0.0.1:5555/getStatistic', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 更新文本
+        document.getElementById('success-ratio').textContent = (data.success_ratio * 100).toFixed(2) + '%';
+        document.getElementById('key-success-ratio').textContent = (data.key_success_ratio * 100).toFixed(2) + '%';
+        document.getElementById('average-used-time').textContent = data.average_used_time.toFixed(4);
+
+        // 更新进度条
+        document.getElementById('success-ratio-bar').style.width = (data.success_ratio * 100).toFixed(2) + '%';
+        document.getElementById('key-success-ratio-bar').style.width = (data.key_success_ratio * 100).toFixed(2) + '%';
+        document.getElementById('average-used-time-bar').style.width = Math.min(data.average_used_time * 10 * 100, 100).toFixed(2) + '%';
+    })
+    .catch(error => {
+        console.error('Error fetching statistics:', error);
+    });
+});
+
+    </script>
     
 </body>
 
