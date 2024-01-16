@@ -474,6 +474,7 @@ def duplication_enc_del():
                 ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
             elif delete_alg=="commandDelete":
+                base64_vrf_output_string="the default string 1111111"
                 print("使用删除命令删除密钥分片及密文副本:")
                 ciphercenter.del_field(infoID, delete_granularity, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Command delete operation completed successfully."})
@@ -499,6 +500,7 @@ def duplication_enc_del():
                 ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
             elif delete_alg=="commandDelete":
+                base64_vrf_output_string="the default string 1111111"
                 print("使用删除命令删除密钥分片及密文副本:")
                 ciphercenter.del_file(infoID, delete_alg, base64_vrf_output_string, delete_level)
                 return jsonify({"status": "success", "message": "Command delete operation completed successfully."})
@@ -530,14 +532,14 @@ def duplication_del():
         return jsonify({"status": "error", "message": "duplicationDelCommand not provided"}), 400
 
     # 分别解析各个字段
-    infoID = duplication_del_command.get('infoID')
-    affairsID=duplication_del_command.get('affairsID')
-    target_files = duplication_del_command.get('target')
-    delete_alg=duplication_del_command.get('deleteAlg')
+    infoID = duplication_del_command.get('infoID', None)
+    affairsID=duplication_del_command.get('affairsID', None)
+    target_files = duplication_del_command.get('target', None)
+    delete_alg=duplication_del_command.get('deleteAlg', None)
     delete_granularity = duplication_del_command.get('deleteGranularity', None)  # 如果字段不存在则返回None
-    delete_alg_param = duplication_del_command.get('deleteAlgParam')
-    delete_level = duplication_del_command.get('deleteLevel')
-    info_type=duplication_del_command.get('infoType')
+    delete_alg_param = duplication_del_command.get('deleteAlgParam', None)
+    delete_level = duplication_del_command.get('deleteLevel', None)
+    info_type=duplication_del_command.get('infoType', None)
 
 
 
@@ -649,12 +651,14 @@ def duplication_del():
     
     elif delete_alg=="commandDelete":
         print("使用系统命令执行副本删除")
+        base64_vrf_output_string="the default string 1111111"
         if info_type==1:
             # 执行命令删除操作
             try:
 
                 # 创建一个 JsonOverwriter 实例
                 jsonoverwriter = JsonOverwriter(granularity=delete_granularity, alg_param=base64_vrf_output_string, level=delete_level)
+
 
                 # 调用 command_delete 方法
                 jsonoverwriter.command_delete(target_files)

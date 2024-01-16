@@ -2,6 +2,8 @@ import mysql.connector
 from mysql.connector import Error
 import json
 import ast
+import time
+import threading
 
 class PlaintextLocationManager:
     def __init__(self, db_config):
@@ -9,11 +11,38 @@ class PlaintextLocationManager:
         self._json_data = None  # 私有变量，用于存储从 JSON 文件读取的数据
         self.db_config = db_config
         self.connection = None
+        self.keep_alive_thread = None
         try:
             self.connection = mysql.connector.connect(**db_config)
             self.create_table()
+            self._start_keep_alive_thread()
         except Error as e:
             print(f"Error connecting to MySQL: {e}")
+
+
+    def _start_keep_alive_thread(self):
+        """启动保持数据库连接活跃的线程"""
+        if self.keep_alive_thread is None or not self.keep_alive_thread.is_alive():
+            self.keep_alive_thread = threading.Thread(target=self._keep_connection_alive, daemon=True)
+            self.keep_alive_thread.start()
+
+    def _keep_connection_alive(self):
+        """定期执行简单查询以保持数据库连接活跃"""
+        while True:
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute("SELECT 1")
+                cursor.fetchall()  # 确保读取所有结果
+                cursor.close()
+            except Error as e:
+                print(f"Connection lost. Attempting to reconnect: {e}")
+                try:
+                    self.connection = mysql.connector.connect(**self.db_config)
+                    if self.connection.is_connected():
+                        print("Reconnected to MySQL database")
+                except Error as reconnect_error:
+                    print(f"Failed to reconnect: {reconnect_error}")
+            time.sleep(100)  # 每5分钟执行一次
 
     def create_table(self):
         """创建 PlaintextLocation 表"""

@@ -4,6 +4,8 @@ import json
 import csv
 import subprocess
 import os
+import time
+import threading
 
 class OperationLogModel:
     def __init__(self, host, user, password, database):
@@ -11,8 +13,10 @@ class OperationLogModel:
         self.user = user
         self.password = password
         self.database = database
+        self.keep_alive_thread = None
         self.conn = None
         self._init_db()
+
 
     def _init_db(self):
         """
@@ -26,6 +30,7 @@ class OperationLogModel:
                 password=self.password,
                 database=self.database
             )
+
 
             # Check if connection was successful
             if self.conn.is_connected():
@@ -72,6 +77,14 @@ class OperationLogModel:
                 cursor = self.conn.cursor()
                 cursor.execute(create_table_query)
                 cursor.close()
+
+
+
+                        # Start the keep-alive thread only if it's not already running
+            # if self.keep_alive_thread is None or not self.keep_alive_thread.is_alive():
+            #     self.keep_alive_thread = threading.Thread(target=self._keep_connection_alive, daemon=True)
+            #     self.keep_alive_thread.start()
+
         except Error as e:
             print(f"An error occurred while connecting to MySQL: {e}")
             raise
@@ -510,6 +523,29 @@ class OperationLogModel:
 
             final_list.append(final_dict)
         return final_list
+    def _start_keep_alive_thread(self):
+        """启动保持数据库连接活跃的线程"""
+        if self.keep_alive_thread is None or not self.keep_alive_thread.is_alive():
+            self.keep_alive_thread = threading.Thread(target=self._keep_connection_alive, daemon=True)
+            self.keep_alive_thread.start()
+
+    def _keep_connection_alive(self):
+        """定期执行简单查询以保持数据库连接活跃"""
+        while True:
+            try:
+                cursor = self.connection.cursor()
+                cursor.execute("SELECT 1")
+                cursor.fetchall()  # 确保读取所有结果
+                cursor.close()
+            except Error as e:
+                print(f"Connection lost. Attempting to reconnect: {e}")
+                try:
+                    self.connection = mysql.connector.connect(**self.db_config)
+                    if self.connection.is_connected():
+                        print("Reconnected to MySQL database")
+                except Error as reconnect_error:
+                    print(f"Failed to reconnect: {reconnect_error}")
+            time.sleep(100)  # 每5分钟执行一次
     
 
 

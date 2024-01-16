@@ -705,7 +705,7 @@ def get_instruction():
         del_info=fullEvidence
         del_info['usedTime']=str(used_time)
         del_info['Success']=True
-        send_log(del_info,True,"127.0.0.1",5555)
+        # send_log(del_info,True,"127.0.0.1",5555)
         
 
         # # 确保log文件夹存在，不存在则创建
@@ -730,7 +730,10 @@ def get_instruction():
         #     print("infoID not found in operation_log dictionary")
 
 
-        save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
+        db_model = OperationLogModel("127.0.0.1", "root", "123456", "assured_deletion")
+        db_model.add_record(fullEvidence)
+        print("log added!")
+        # save_operation_log(fullEvidence, affairsID, userID, sorted_data, deleteMethod, deleteGranularity, key_locations, infoID,isRoot)
 
 #########################删除结果汇总#########################
         print("\n------------------------------")
