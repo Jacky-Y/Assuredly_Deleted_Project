@@ -5,6 +5,7 @@ from math import ceil
 import binascii
 import json
 
+
 class SECipher:
     # SSE的密文结构
     def __init__(self):
@@ -32,6 +33,7 @@ class SEServer:
         self.conn.autocommit(False)
 
         self.setup(isLoad)
+
 
     # 销毁类的析构函数
     def __del__(self):
@@ -148,6 +150,20 @@ class SEServer:
         # grp = self.GRP.get(_l_grp, {})
 
         grp_name = loc_grp.hex()
+
+        
+        try:
+            self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
+            # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
+            # print("成功连接到MySQL服务器！")
+        except Exception as e:
+            print("无法连接到MySQL服务器：", str(e))
+        # 获取游标对象
+        self.cursor = self.conn.cursor()
+        # 关闭自动提交事务
+        self.conn.autocommit(False)
+        sql = f"USE {self.db}"
+        self.cursor.execute(sql)
 
         sql = f"SELECT * FROM grp WHERE Iw='{grp_name}'"
         self.cursor.execute(sql)
@@ -282,6 +298,20 @@ class SEServer:
 
         _L = L.hex()
         # 判断主键是否存在
+        
+        try:
+            self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
+            # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
+            # print("成功连接到MySQL服务器！")
+        except Exception as e:
+            print("无法连接到MySQL服务器：", str(e))
+        # 获取游标对象
+        self.cursor = self.conn.cursor()
+        # 关闭自动提交事务
+        self.conn.autocommit(False)
+        sql = f"USE {self.db}"
+        self.cursor.execute(sql)
+
         sql = f"SELECT * FROM cipher WHERE L = '{_L}'"
         self.cursor.execute(sql)
         row = self.cursor.fetchone()

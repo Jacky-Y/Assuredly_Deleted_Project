@@ -4,6 +4,8 @@ import copy
 from math import ceil
 from random import choice
 import pymysql
+import binascii
+
 
 # SSE的客户端部分
 class SEClient:
@@ -18,6 +20,8 @@ class SEClient:
         # 本地状态也存储到数据库中cnt表中
         self.db = 'edb'
         # 创建mysql连接对象
+
+
         try:
             self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
             # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
@@ -30,6 +34,7 @@ class SEClient:
         self.conn.autocommit(False)
 
         self.setup(isLoad)
+
 
     # 销毁类的析构函数
     def __del__(self):
@@ -301,6 +306,19 @@ class SEClient:
         cip_id = bytearray(64)
         buf = bytearray(64)
 
+        try:
+            self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
+            # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
+            # print("成功连接到MySQL服务器！")
+        except Exception as e:
+            print("无法连接到MySQL服务器：", str(e))
+        # 获取游标对象
+        self.cursor = self.conn.cursor()
+        # 关闭自动提交事务
+        self.conn.autocommit(False)
+        sql = f"USE {self.db}"
+        self.cursor.execute(sql)
+
         # 查询计数器状态
         sql = f"SELECT * FROM cnt WHERE Kw=%s"
         self.cursor.execute(sql, keyword)
@@ -346,6 +364,20 @@ class SEClient:
     def trapdoor(self, keyword, cnt_upd, K, loc_grp):
         # c = {'cnt_srch': 0, 'cnt_upd': 0}
         K_1 = bytearray(32)
+
+
+        try:
+            self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='123456')
+            # self.conn = pymysql.connect(host='localhost', port=3306, user='root', password='password')
+            # print("成功连接到MySQL服务器！")
+        except Exception as e:
+            print("无法连接到MySQL服务器：", str(e))
+        # 获取游标对象
+        self.cursor = self.conn.cursor()
+        # 关闭自动提交事务
+        self.conn.autocommit(False)
+        sql = f"USE {self.db}"
+        self.cursor.execute(sql)
 
         # 查询计数器状态
         sql = f"SELECT * FROM cnt WHERE Kw=%s"

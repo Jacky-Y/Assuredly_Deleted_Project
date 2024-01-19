@@ -5,6 +5,7 @@ import shutil
 from model.InfoTypesManager import InfoTypesManager
 from model.PlaintextLocationManager import PlaintextLocationManager
 from model.EncryptionStatusManager import EncryptionStatusManager
+import datetime
 
 
 import cipher_center
@@ -142,6 +143,34 @@ def load_file(path,is_encrypted,store_paths,threshold=[],keywords=[]):
 
         return {infoID:file_type}
 
+def generate_delete_commands(data_list):
+    delete_commands = []
+
+    for item in data_list:
+        for info_id, types in item.items():
+            command = {
+                "systemID": "0x40000000",
+                "systemIP": "127.0.0.1",
+                "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "data": {
+                    "affairsID": ''.join(random.choices('0123456789', k=8)),
+                    "userID": "u100000003",
+                    "infoID": info_id,
+                    "deleteMethod": "overwrittenDelete",
+                    "deleteGranularity": "",
+                    "deleteNotifyTree": "{\"b1000\": {\"children\": []}}"
+                },
+                "dataHash": "56e3be093f377b9d984eef02a982d852d1bce062fdb505bcf87df46141fd80aa"
+            }
+
+            # 设置 deleteGranularity
+            if not set(types).issubset({'Image', 'Video', 'Audio', 'Text'}):
+                command['data']['deleteGranularity'] = random.choice(types)
+
+            delete_commands.append(command)
+
+    return delete_commands
+
 import os
 
 def files_init(target_folder, store_paths, threshold=[], keywords=[]):
@@ -178,6 +207,13 @@ def files_init(target_folder, store_paths, threshold=[], keywords=[]):
 # 使用示例
 infoids=files_init("./testdata", ['./c','./d','./e','./f'])
 print(infoids)
+
+# 生成删除指令
+commands = generate_delete_commands(infoids)
+
+# 将结果保存到 JSON 文件
+with open('delete_commands.json', 'w', encoding='utf-8') as file:
+    json.dump(commands, file, ensure_ascii=False, indent=4)
 
 
 
