@@ -37,7 +37,7 @@ infoTypesManager=InfoTypesManager(db_config)
 # keyStatusManager=KeyStatusManager(db_config)
 plaintextLocationManager=PlaintextLocationManager(db_config)
 encryptionStatusManager=EncryptionStatusManager(db_config)
-ciphercenter = cipher_center.CipherCTR(isLoad=True)
+ciphercenter = cipher_center.CipherCTR(isLoad=True,isLazyDel=False)
 
 #  # 两处副本目录
 # copy_paths = ["./c", "./e"]
@@ -570,7 +570,10 @@ def duplication_del():
                 # 调用 overwrite_file 方法
                 jsonoverwriter.overwrite_file(target_files)
 
-                print(f"已经完成对{target_files}的覆写")
+                if delete_granularity:
+                    print(f"已经完成对{target_files}的{delete_granularity}字段的细粒度覆写")
+                else:
+                    print(f"已经完成对{target_files}的覆写")
 
                 return jsonify({"status": "success", "message": "Overwrite operation completed successfully."})
             except Exception as e:

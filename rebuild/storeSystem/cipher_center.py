@@ -329,25 +329,63 @@ class CipherCTR:
         ebuf.clear()
         # print("Keys:", kpaths)
 
-        # 删除最小密钥分量
+        # # 删除最小密钥分量
+        # self.del_min_keys(info_id, t, n, kpaths, del_method, vrf, level)
+
+        # # 删除剩余密钥分量
+        # self.del_rest_keys(info_id, kpaths, del_method, vrf, level)
+        # # 搜一次确保SE中物理删除
+        # self.client.trapdoor(info_id+"#k", cnt_upd, self.Kw, self.Iw)
+        # self.server.search(cnt_upd[0], self.Kw, self.Iw, ebuf)
+        # ebuf.clear()
+
+        # # 删除密文文件及所有副本
+        # self.del_replica(info_id, del_method, vrf, level)
+
+        # # 闲时删除设置
+        # if self.isLazyDel is True:
+        #     self.lazy_ids[self.lazy_cnt] = [info_id, del_method, vrf, level]
+        #     self.lazy_cnt += 1
+        #     if self.lazy_cnt == 10:
+        #         self.del_lazy()
+        #         self.lazy_cnt = 0
+        #         self.lazy_ids.clear()
+         # 删除最小密钥分量
         self.del_min_keys(info_id, t, n, kpaths, del_method, vrf, level)
 
-        # 删除剩余密钥分量
-        self.del_rest_keys(info_id, kpaths, del_method, vrf, level)
-        # 搜一次确保SE中物理删除
-        self.client.trapdoor(info_id+"#k", cnt_upd, self.Kw, self.Iw)
-        self.server.search(cnt_upd[0], self.Kw, self.Iw, ebuf)
-        ebuf.clear()
+        # 如果启用闲时删除功能，则之后再删剩余密钥分量与密文文件
+        if self.isLazyDel is False:
+            # 删除剩余密钥分量
+            self.del_rest_keys(info_id, kpaths, del_method, vrf, level)
+            # 搜一次确保SE中物理删除
+            self.client.trapdoor(info_id+"#k", cnt_upd, self.Kw, self.Iw)
+            self.server.search(cnt_upd[0], self.Kw, self.Iw, ebuf)
+            ebuf.clear()
 
-        # 删除密文文件及所有副本
-        self.del_replica(info_id, del_method, vrf, level)
+            # 删除密文文件及所有副本
+            self.del_replica(info_id, del_method, vrf, level)
 
         # 闲时删除设置
         if self.isLazyDel is True:
-            self.lazy_ids[self.lazy_cnt] = [info_id, del_method, vtf, level]
+            print(len(kpaths),"个密钥分片延迟删除",kpaths)
+            # 获取文件密文副本位置
+            self.client.trapdoor(info_id+"#p", cnt_upd, self.Kw, self.Iw)
+            if cnt_upd[0] == -1:
+                print(info_id+"#p", "SE中无记录")
+                return
+            self.server.search(cnt_upd[0], self.Kw, self.Iw, ebuf)
+            if ebuf == []:
+                print(info_id, "paths 无匹配文件！")
+                return
+            self.client.decrypt(ebuf,fpaths)
+            print("文件副本延迟删除", fpaths)
+
+            self.lazy_ids[self.lazy_cnt] = [info_id, del_method, vrf, level]
             self.lazy_cnt += 1
-            if self.lazy_cnt == 10:
+            if self.lazy_cnt == 3:
+                print("--开始延迟删除--")
                 self.del_lazy()
+                print("--结束延迟删除--")
                 self.lazy_cnt = 0
                 self.lazy_ids.clear()
 
@@ -449,7 +487,7 @@ class CipherCTR:
             # 删除密文文件
             self.del_replica(info_in[0], info_in[1], info_in[2], info_in[3])
             # 查询并删除剩余密钥分量
-            cnt_upd = []
+            cnt_upd = [0]
             self.client.trapdoor(info_in[0]+"#k", cnt_upd, self.Kw, self.Iw)
             if cnt_upd[0] == -1:
                 print(info_in[0]+"#k", "SE中无记录")
